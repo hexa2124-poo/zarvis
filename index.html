@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JARVIS OS — Neural AI Ecosystem</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --neon:#00d4ff;--neon2:#00ff88;--accent:#a855f7;--danger:#ff4f6b;--gold:#ffd700;
+  --bg:#020810;--surface:rgba(0,212,255,0.03);--border:rgba(0,212,255,0.15);
+  --text:#c8e6f0;--dim:rgba(200,230,240,0.5);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif}
+#app{width:100vw;height:100vh;display:flex;flex-direction:column;overflow:hidden;
+  background:radial-gradient(ellipse at 20% 50%,rgba(0,212,255,0.04) 0%,transparent 60%),
+             radial-gradient(ellipse at 80% 20%,rgba(168,85,247,0.04) 0%,transparent 60%),
+             radial-gradient(ellipse at 50% 100%,rgba(0,255,136,0.03) 0%,transparent 50%),#020810;
+  position:relative;
+}
+.grid-overlay{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);
+  background-size:60px 60px;}
+.scanline{position:fixed;inset:0;pointer-events:none;z-index:999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);}
+.corner{position:fixed;width:20px;height:20px;border-color:var(--neon);border-style:solid;opacity:0.4;z-index:1000}
+.corner-tl{top:8px;left:8px;border-width:1px 0 0 1px}
+.corner-tr{top:8px;right:8px;border-width:1px 1px 0 0}
+.corner-bl{bottom:8px;left:8px;border-width:0 0 1px 1px}
+.corner-br{bottom:8px;right:8px;border-width:0 1px 1px 0}
+
+@keyframes rotate-slow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes rotate-ccw{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glow-pulse{0%,100%{box-shadow:0 0 20px rgba(0,212,255,0.3),0 0 40px rgba(0,212,255,0.1)}50%{box-shadow:0 0 40px rgba(0,212,255,0.6),0 0 80px rgba(0,212,255,0.2)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes waveform{0%,100%{height:4px}50%{height:20px}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;
+  border-bottom:1px solid rgba(0,212,255,0.1);background:rgba(0,0,0,0.5);
+  backdrop-filter:blur(20px);z-index:100;flex-shrink:0;position:relative;}
+.logo-ring-outer{width:36px;height:36px;position:relative;flex-shrink:0}
+.logo-ring-outer::before{content:'';position:absolute;inset:0;border:1px solid rgba(0,212,255,0.4);border-radius:50%;animation:rotate-slow 6s linear infinite}
+.logo-ring-outer::after{content:'';position:absolute;inset:4px;border:1px solid rgba(0,212,255,0.2);border-radius:50%;animation:rotate-ccw 4s linear infinite}
+.logo-core{position:absolute;inset:8px;background:rgba(0,212,255,0.3);border-radius:50%;box-shadow:0 0 15px rgba(0,212,255,0.5)}
+.logo-brand{font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:#00d4ff;letter-spacing:4px;text-shadow:0 0 20px rgba(0,212,255,0.8)}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,212,255,0.4);letter-spacing:2px}
+.hdr-stat{text-align:center}
+.hdr-stat-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(200,230,240,0.3);letter-spacing:1px}
+.hdr-stat-val{font-family:'Share Tech Mono',monospace;font-size:11px}
+.clock{font-family:'Orbitron',monospace;font-size:22px;color:#00d4ff;letter-spacing:3px;line-height:1;text-align:right}
+.clock-date{font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,212,255,0.4);letter-spacing:1px;text-align:right}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid rgba(0,212,255,0.08);background:rgba(0,0,0,0.3);flex-shrink:0;overflow-x:auto;position:relative;z-index:10}
+.tab{padding:10px 18px;cursor:pointer;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+  color:rgba(200,230,240,0.35);border-bottom:1px solid transparent;transition:all 0.2s;
+  font-family:'Share Tech Mono',monospace;white-space:nowrap;user-select:none}
+.tab:hover{color:var(--neon)}
+.tab.active{color:var(--neon);border-bottom-color:var(--neon);text-shadow:0 0 10px rgba(0,212,255,0.5)}
+
+/* MAIN */
+.main{flex:1;overflow:hidden;display:flex;position:relative}
+.tab-panel{display:none;width:100%;height:100%;overflow:hidden}
+.tab-panel.active{display:flex}
+
+/* PANEL */
+.panel{background:rgba(0,212,255,0.02);border:1px solid rgba(0,212,255,0.12);border-radius:2px;position:relative;overflow:hidden}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.5),transparent)}
+
+/* SIDEBAR */
+.sidebar{flex-shrink:0;border-right:1px solid rgba(0,212,255,0.1);background:rgba(0,0,0,0.2);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+
+/* BUTTONS */
+.btn{background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.3);color:var(--neon);
+  font-family:'Rajdhani',sans-serif;font-weight:600;font-size:12px;letter-spacing:1px;
+  text-transform:uppercase;padding:8px 16px;cursor:pointer;transition:all 0.2s;border-radius:1px}
+.btn:hover{background:rgba(0,212,255,0.15);border-color:rgba(0,212,255,0.7);box-shadow:0 0 20px rgba(0,212,255,0.3)}
+.btn:active{transform:scale(0.98)}
+.btn.active{background:rgba(0,212,255,0.2);border-color:var(--neon);box-shadow:0 0 20px rgba(0,212,255,0.4)}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+.btn-gold{border-color:rgba(255,215,0,0.4);color:#ffd700}
+.btn-gold:hover{background:rgba(255,215,0,0.1);border-color:#ffd700;box-shadow:0 0 20px rgba(255,215,0,0.3)}
+.btn-green{border-color:rgba(0,255,136,0.4);color:#00ff88}
+.btn-sm{font-size:10px;padding:4px 10px;letter-spacing:0.5px}
+
+/* INPUT */
+.inp{background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.2);border-radius:1px;
+  color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;padding:10px 14px;
+  width:100%;outline:none;transition:all 0.2s}
+.inp:focus{border-color:rgba(0,212,255,0.5);box-shadow:0 0 15px rgba(0,212,255,0.1)}
+.inp::placeholder{color:rgba(200,230,240,0.3)}
+textarea.inp{resize:none;font-family:'Rajdhani',sans-serif}
+
+/* SECTION LABEL */
+.slabel{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(0,212,255,0.5);margin-bottom:8px}
+
+/* STATUS DOT */
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--neon2);box-shadow:0 0 8px var(--neon2)}
+
+/* MESSAGES */
+.msg-j{background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-left:2px solid var(--neon);padding:10px 14px;border-radius:0 4px 4px 0;animation:fadeInUp 0.3s ease;font-size:14px;line-height:1.6;white-space:pre-wrap;max-width:520px}
+.msg-u{background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.15);border-right:2px solid var(--accent);padding:10px 14px;border-radius:4px 0 0 4px;animation:fadeInUp 0.3s ease;font-size:14px;line-height:1.6;white-space:pre-wrap;max-width:520px;text-align:right}
+.msg-sender{font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(200,230,240,0.3);margin-bottom:4px;letter-spacing:1px}
+.msg-wrap-j{display:flex;flex-direction:column;align-items:flex-start;align-self:flex-start}
+.msg-wrap-u{display:flex;flex-direction:column;align-items:flex-end;align-self:flex-end}
+
+/* WAVEFORM */
+.waveform{display:flex;align-items:center;gap:3px;height:24px}
+.wave-bar{width:3px;background:var(--neon);border-radius:2px;height:4px}
+.wave-bar.active{animation:waveform 0.6s ease-in-out infinite}
+
+/* LOADING */
+.ldot{width:7px;height:7px;border-radius:50%;background:var(--neon);animation:blink 1s ease-in-out infinite;display:inline-block}
+
+/* PROGRESS */
+.prog-track{height:2px;background:rgba(0,212,255,0.1);border-radius:1px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--neon),var(--neon2));box-shadow:0 0 8px var(--neon);border-radius:1px;transition:width 0.8s ease}
+
+/* NEON TEXT */
+.neon{color:var(--neon);text-shadow:0 0 10px rgba(0,212,255,0.7),0 0 20px rgba(0,212,255,0.3)}
+.neon-green{color:var(--neon2);text-shadow:0 0 10px rgba(0,255,136,0.7)}
+
+/* PROJECT CARD */
+.proj-card{padding:12px;cursor:pointer;border:1px solid rgba(0,212,255,0.1);border-radius:2px;transition:all 0.2s;background:rgba(0,212,255,0.02)}
+.proj-card:hover,.proj-card.sel{border-color:rgba(0,212,255,0.35);background:rgba(0,212,255,0.05)}
+
+/* AGENT CARD */
+.agent-card{padding:11px;cursor:pointer;border:1px solid rgba(0,212,255,0.1);border-radius:2px;transition:all 0.25s;background:rgba(0,212,255,0.02);user-select:none}
+.agent-card:hover{border-color:rgba(0,212,255,0.3);background:rgba(0,212,255,0.04);transform:translateY(-1px)}
+.agent-card.sel{border-color:rgba(0,212,255,0.5)!important;background:rgba(0,212,255,0.08)!important}
+
+/* CHAT AREA */
+.chat-area{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.chat-footer{padding:12px 20px;border-top:1px solid rgba(0,212,255,0.08);background:rgba(0,0,0,0.3);display:flex;gap:10px;flex-shrink:0}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.3);border-radius:2px}
+
+/* MEMORY NODE */
+.mem-node{padding:12px 16px;display:flex;gap:12px;align-items:flex-start;animation:fadeInUp 0.3s ease}
+.mem-tag{font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 6px;border:1px solid;border-radius:1px;text-align:center;flex-shrink:0;width:54px}
+
+/* FOOTER */
+footer{display:flex;align-items:center;justify-content:space-between;padding:6px 20px;
+  border-top:1px solid rgba(0,212,255,0.08);background:rgba(0,0,0,0.6);flex-shrink:0;position:relative;z-index:10}
+
+/* ORBITRON TITLE */
+.orb-title{font-family:'Orbitron',monospace;font-weight:700}
+
+/* GOD MODE CARD */
+.gm-card{padding:20px;border-left-width:3px;border-left-style:solid}
+
+/* THINKING BADGE */
+.thinking-badge{display:flex;align-items:center;gap:8px;padding:8px 14px;border-left:2px solid var(--neon)}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .sidebar{width:180px!important}
+  .logo-brand{font-size:14px}
+  .clock{font-size:16px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="grid-overlay"></div>
+  <div class="scanline"></div>
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+
+  <!-- HEADER -->
+  <header>
+    <div style="display:flex;align-items:center;gap:14px">
+      <div class="logo-ring-outer"><div class="logo-core"></div></div>
+      <div>
+        <div class="logo-brand">JARVIS OS</div>
+        <div class="logo-sub">NEURAL AI ECOSYSTEM v4.6</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:24px;align-items:center">
+      <div class="hdr-stat"><div class="hdr-stat-label">CPU</div><div class="hdr-stat-val" style="color:#00ff88">23%</div></div>
+      <div class="hdr-stat"><div class="hdr-stat-label">NET</div><div class="hdr-stat-val" style="color:#00d4ff">LIVE</div></div>
+      <div class="hdr-stat"><div class="hdr-stat-label">MEM</div><div class="hdr-stat-val" id="hdr-mem" style="color:#a855f7">3 nodes</div></div>
+    </div>
+    <div>
+      <div class="clock" id="clock">00:00:00</div>
+      <div class="clock-date" id="clock-date">---</div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" data-tab="assistant">JARVIS</div>
+    <div class="tab" data-tab="projects">Projects</div>
+    <div class="tab" data-tab="agents">AI Team</div>
+    <div class="tab" data-tab="godmode">God Mode</div>
+    <div class="tab" data-tab="memory">Memory</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- ── ASSISTANT ── -->
+    <div class="tab-panel active" id="panel-assistant">
+      <!-- Sidebar: Heart Core -->
+      <div class="sidebar" style="width:210px;align-items:center">
+        <canvas id="heart-canvas" width="180" height="180"></canvas>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:-6px">
+          <span class="dot" id="core-dot"></span>
+          <span id="core-status" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(0,212,255,0.6);letter-spacing:1px">STANDBY</span>
+        </div>
+        <!-- Stats -->
+        <div style="width:100%;display:flex;flex-direction:column;gap:7px;margin-top:4px">
+          <div class="panel" style="padding:8px 10px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:11px;color:rgba(200,230,240,0.5)">Messages</span>
+            <span class="orb-title" style="font-size:13px;color:#00d4ff" id="stat-msgs">1</span>
+          </div>
+          <div class="panel" style="padding:8px 10px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:11px;color:rgba(200,230,240,0.5)">Memories</span>
+            <span class="orb-title" style="font-size:13px;color:#a855f7" id="stat-mems">3</span>
+          </div>
+          <div class="panel" style="padding:8px 10px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:11px;color:rgba(200,230,240,0.5)">Projects</span>
+            <span class="orb-title" style="font-size:13px;color:#00ff88" id="stat-projs">2</span>
+          </div>
+        </div>
+        <!-- Voice -->
+        <div style="width:100%;display:flex;flex-direction:column;gap:6px">
+          <div class="slabel">Voice System</div>
+          <button class="btn btn-sm" id="mic-btn" style="width:100%" onclick="toggleMic()">🎤 MIC OFF</button>
+          <div class="waveform" id="waveform" style="justify-content:center;padding:4px 0">
+            <div class="wave-bar" style="animation-delay:0s"></div>
+            <div class="wave-bar" style="animation-delay:0.06s"></div>
+            <div class="wave-bar" style="animation-delay:0.12s"></div>
+            <div class="wave-bar" style="animation-delay:0.18s"></div>
+            <div class="wave-bar" style="animation-delay:0.24s"></div>
+            <div class="wave-bar" style="animation-delay:0.30s"></div>
+            <div class="wave-bar" style="animation-delay:0.36s"></div>
+            <div class="wave-bar" style="animation-delay:0.42s"></div>
+            <div class="wave-bar" style="animation-delay:0.48s"></div>
+            <div class="wave-bar" style="animation-delay:0.54s"></div>
+            <div class="wave-bar" style="animation-delay:0.60s"></div>
+            <div class="wave-bar" style="animation-delay:0.66s"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat -->
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div class="chat-area" id="chat-area">
+          <div class="msg-wrap-j">
+            <div class="msg-sender">◈ JARVIS</div>
+            <div class="msg-j">Good day. I am JARVIS — your integrated AI operating system. All systems nominal. How may I assist you, Sir?</div>
+          </div>
+        </div>
+        <div class="chat-footer">
+          <input class="inp" id="chat-input" placeholder="Speak your command, Sir..." style="flex:1" />
+          <button class="btn" id="send-btn" onclick="sendMessage()">SEND</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PROJECTS ── -->
+    <div class="tab-panel" id="panel-projects" style="flex-direction:row">
+      <div class="sidebar" style="width:240px">
+        <div class="slabel">Active Projects</div>
+        <div id="proj-list"></div>
+        <button class="btn btn-sm" style="width:100%;margin-top:4px" onclick="addProject()">+ NEW PROJECT</button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:20px" id="proj-detail">
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(200,230,240,0.3);flex-direction:column;gap:10px">
+          <div class="orb-title" style="font-size:32px;color:rgba(0,212,255,0.3)">◈</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:2px">SELECT A PROJECT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── AGENTS ── -->
+    <div class="tab-panel" id="panel-agents" style="flex-direction:row">
+      <div class="sidebar" style="width:255px;gap:7px">
+        <div class="slabel">AI Agent Team</div>
+        <div id="agent-list"></div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden" id="agent-right">
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(200,230,240,0.3);flex-direction:column;gap:10px">
+          <div class="orb-title" style="font-size:28px;color:rgba(0,212,255,0.3)">◈◉◎</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:2px">SELECT AN AGENT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GOD MODE ── -->
+    <div class="tab-panel" id="panel-godmode" style="overflow-y:auto">
+      <div style="max-width:800px;margin:0 auto;padding:24px;width:100%">
+        <div style="text-align:center;margin-bottom:24px">
+          <div class="orb-title" style="font-size:26px;color:#ffd700;text-shadow:0 0 30px rgba(255,215,0,0.5);margin-bottom:4px">⚡ BUSINESS GOD MODE</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(200,230,240,0.4);letter-spacing:2px">MULTI-GENIUS STRATEGIC ANALYSIS ENGINE</div>
+        </div>
+        <div class="panel" style="padding:20px;margin-bottom:20px">
+          <div class="slabel">Describe Your Business Problem</div>
+          <textarea class="inp" id="biz-input" rows="4" placeholder="e.g. We're struggling to scale from $100K to $1M ARR. Churn is 8% monthly and CAC is rising..."></textarea>
+          <div style="display:flex;gap:10px;margin-top:12px">
+            <button class="btn btn-gold" style="flex:1;font-size:13px" id="gm-btn" onclick="runGodMode()">⚡ ENGAGE GOD MODE</button>
+            <button class="btn btn-sm" onclick="resetGodMode()">RESET</button>
+          </div>
+        </div>
+        <div id="gm-loading" style="display:none;text-align:center;padding:40px">
+          <div style="display:flex;justify-content:center;gap:8px;margin-bottom:12px">
+            <span class="ldot" style="background:#ffd700;box-shadow:0 0 10px #ffd700;animation-delay:0s"></span>
+            <span class="ldot" style="background:#ffd700;box-shadow:0 0 10px #ffd700;animation-delay:0.2s"></span>
+            <span class="ldot" style="background:#ffd700;box-shadow:0 0 10px #ffd700;animation-delay:0.4s"></span>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#ffd700">Channeling Musk, Bezos, Jobs & Buffett...</div>
+        </div>
+        <div id="gm-result"></div>
+      </div>
+    </div>
+
+    <!-- ── MEMORY ── -->
+    <div class="tab-panel" id="panel-memory" style="overflow-y:auto">
+      <div style="max-width:720px;margin:0 auto;padding:20px;width:100%;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <input class="inp" id="mem-search" placeholder="Search memory nodes..." style="flex:1;min-width:160px" oninput="renderMemory()">
+          <input class="inp" id="mem-new" placeholder="Add memory node..." style="width:200px" onkeydown="if(event.key==='Enter')addMemory()">
+          <button class="btn btn-sm" onclick="addMemory()">+ ADD</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(0,212,255,0.5);letter-spacing:2px" id="mem-count">MEMORY ENGINE — 3 NODES</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap" id="mem-tag-btns"></div>
+        </div>
+        <div id="mem-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- FOOTER -->
+  <footer>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div style="display:flex;gap:6px;align-items:center"><span class="dot" style="width:5px;height:5px;background:#00ff88;box-shadow:0 0 6px #00ff88"></span><span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(200,230,240,0.4)">CORE: <span style="color:#00ff88">ONLINE</span></span></div>
+      <div style="display:flex;gap:6px;align-items:center"><span class="dot" style="width:5px;height:5px"></span><span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(200,230,240,0.4)">NEURAL: <span style="color:#00d4ff">ACTIVE</span></span></div>
+      <div style="display:flex;gap:6px;align-items:center"><span class="dot" style="width:5px;height:5px;background:#a855f7;box-shadow:0 0 6px #a855f7"></span><span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(200,230,240,0.4)">MEM: <span style="color:#a855f7" id="footer-mem">3 NODES</span></span></div>
+    </div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,212,255,0.3);letter-spacing:1px">JARVIS OS v4.6 — POWERED BY CLAUDE SONNET</div>
+  </footer>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const AGENTS = [
+  {id:"ceo",name:"CEO",icon:"◈",color:"#00d4ff",desc:"Strategic leadership & vision",personality:"Think like Elon Musk — first principles, bold bets, 10x thinking. You are the CEO AI Agent. Be visionary and decisive."},
+  {id:"marketing",name:"Marketing",icon:"◉",color:"#ff6b35",desc:"Brand, campaigns & growth",personality:"Growth hacker meets brand architect. Data-driven creativity. You are the Marketing AI Agent."},
+  {id:"sales",name:"Sales",icon:"◎",color:"#00ff88",desc:"Revenue & partnerships",personality:"Challenger sale methodology. Close with empathy and urgency. You are the Sales AI Agent."},
+  {id:"finance",name:"Finance",icon:"◇",color:"#ffd700",desc:"Capital & financial strategy",personality:"Buffett's patience meets Dalio's risk framework. You are the Finance AI Agent."},
+  {id:"ops",name:"Operations",icon:"◆",color:"#a855f7",desc:"Systems & execution",personality:"Kaizen mindset. Eliminate waste. Optimize relentlessly. You are the Operations AI Agent."},
+  {id:"research",name:"Research",icon:"◉",color:"#00bfff",desc:"Intelligence & insights",personality:"Deep research with first-principles synthesis. You are the Research AI Agent."},
+  {id:"social",name:"Social Media",icon:"◌",color:"#ff4f9a",desc:"Content & community",personality:"Viral hooks, authentic voice, algorithmic mastery. You are the Social Media AI Agent."},
+  {id:"product",name:"Product",icon:"⬡",color:"#ff9500",desc:"Development & roadmap",personality:"Jobs-level product intuition. Build what matters. You are the Product AI Agent."},
+];
+
+const THINKING_STYLES = [
+  {name:"Elon",key:"elon",style:"First principles. System-level. Bold bets.",color:"#00d4ff"},
+  {name:"Bezos",key:"bezos",style:"Customer obsession. Long-term. Day 1.",color:"#ff9500"},
+  {name:"Jobs",key:"jobs",style:"Ruthless simplicity. Insane craft.",color:"#e0e0e0"},
+  {name:"Buffett",key:"buffett",style:"Moats. Compounding. Margin of safety.",color:"#ffd700"},
+];
+
+let memories = [
+  {id:1,text:"USA Diamond Project — Phase 1 research complete. Next: market validation.",tag:"project",ts:Date.now()-86400000},
+  {id:2,text:"Weekly goal: Close 3 enterprise deals before Friday.",tag:"task",ts:Date.now()-3600000},
+  {id:3,text:"Vision: Build an AI-native company that operates 10x faster than competitors.",tag:"vision",ts:Date.now()-7200000},
+];
+let projects = [
+  {id:"diamond",name:"USA Diamond Project",status:"active",color:"#00d4ff",tasks:["Market validation","Competitor analysis","MVP scoping","Investor deck"],notes:"Premium B2B SaaS targeting Fortune 500. TAM: $4.2B.",goals:"Reach $1M ARR in 12 months.",progress:35},
+  {id:"nexus",name:"Project Nexus",status:"planning",color:"#a855f7",tasks:["Concept development","Team assembly","Funding strategy"],notes:"Next-gen AI automation platform.",goals:"Secure seed funding by Q3.",progress:15},
+];
+
+let chatHistory = [];
+let agentHistory = [];
+let selectedProject = null;
+let selectedAgent = null;
+let isThinking = false;
+let agentThinking = false;
+let micActive = false;
+let memFilter = "";
+
+// ─── CLOCK ────────────────────────────────────────────────────────────────────
+function updateClock(){
+  const d=new Date();
+  document.getElementById('clock').textContent=d.toLocaleTimeString('en-US',{hour12:false});
+  document.getElementById('clock-date').textContent=d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+setInterval(updateClock,1000);
+updateClock();
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-'+t.dataset.tab).classList.add('active');
+  });
+});
+
+// ─── CLAUDE API ───────────────────────────────────────────────────────────────
+async function callClaude(messages, system){
+  const sys = system || `You are JARVIS — an elite AI assistant modeled after Iron Man's Jarvis. You are brilliant, precise, and subtly witty. Speak with confidence and intelligence. Address the user as "Sir" or "Ma'am" naturally. Be direct, insightful, and actionable. Use → and ◆ for structure occasionally. Keep responses focused and powerful.`;
+  const r = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages})
+  });
+  const d = await r.json();
+  return d.content?.map(b=>b.text||'').join('')||'Signal lost. Recalibrating...';
+}
+
+// ─── HEART CORE CANVAS ────────────────────────────────────────────────────────
+let heartState = {thinking:false,speaking:false,listening:false};
+let heartAnim = null;
+let heartTime = 0;
+let particles = [];
+
+function initParticles(){
+  particles = Array.from({length:40},(_,i)=>({
+    angle:(i/40)*Math.PI*2,
+    radius:55+Math.random()*20,
+    speed:0.002+Math.random()*0.003,
+    size:1+Math.random()*2,
+    opacity:0.3+Math.random()*0.7,
+  }));
+}
+
+function drawHeart(){
+  const canvas = document.getElementById('heart-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W=180,H=180,cx=W/2,cy=H/2;
+  heartTime += 0.016;
+  const t = heartTime;
+  const {thinking,speaking} = heartState;
+  const beat = thinking ? 1+Math.sin(t*8)*0.1 : speaking ? 1+Math.sin(t*6)*0.12 : 1+Math.sin(t*1.5)*0.04;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Rings
+  [80,65,50].forEach((r,i)=>{
+    ctx.beginPath();ctx.arc(cx,cy,r*beat,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(0,212,255,${0.06-i*0.015})`;ctx.lineWidth=1;ctx.stroke();
+  });
+
+  // Rotating dots
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(t*0.5);
+  for(let i=0;i<24;i++){
+    const a=(i/24)*Math.PI*2;
+    ctx.beginPath();ctx.arc(Math.cos(a)*72,Math.sin(a)*72,1.5,0,Math.PI*2);
+    ctx.fillStyle=`rgba(0,212,255,${i%3===0?0.8:0.2})`;ctx.fill();
+  }
+  ctx.restore();
+
+  // Tick marks
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(-t*0.3);
+  for(let i=0;i<16;i++){
+    const a=(i/16)*Math.PI*2;const len=i%4===0?8:4;
+    ctx.beginPath();ctx.moveTo(Math.cos(a)*82,Math.sin(a)*82);ctx.lineTo(Math.cos(a)*(82+len),Math.sin(a)*(82+len));
+    ctx.strokeStyle=`rgba(0,212,255,${i%4===0?0.6:0.2})`;ctx.lineWidth=1.5;ctx.stroke();
+  }
+  ctx.restore();
+
+  // Neural particles
+  const pts=particles.map(p=>({x:cx+Math.cos(p.angle+t*p.speed)*p.radius,y:cy+Math.sin(p.angle+t*p.speed)*p.radius,...p}));
+  pts.forEach((p,i)=>{
+    pts.slice(i+1).forEach(q=>{
+      const d=Math.hypot(p.x-q.x,p.y-q.y);
+      if(d<35){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle=`rgba(0,212,255,${(1-d/35)*0.2})`;ctx.lineWidth=0.5;ctx.stroke();}
+    });
+  });
+  pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fillStyle=`rgba(0,212,255,${p.opacity*beat})`;ctx.fill();});
+
+  // Core glow
+  const coreA = thinking ? 0.6+Math.sin(t*12)*0.3 : 0.5+Math.sin(t*2)*0.15;
+  const g=ctx.createRadialGradient(cx,cy,0,cx,cy,40*beat);
+  g.addColorStop(0,`rgba(0,212,255,${coreA})`);g.addColorStop(0.4,`rgba(0,180,220,${coreA*0.5})`);g.addColorStop(1,'rgba(0,212,255,0)');
+  ctx.beginPath();ctx.arc(cx,cy,40*beat,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+
+  // Hex
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(t*0.4);
+  ctx.beginPath();
+  for(let i=0;i<6;i++){const a=(i/6)*Math.PI*2-Math.PI/6;const r=18*beat;i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}
+  ctx.closePath();ctx.strokeStyle='rgba(0,212,255,0.9)';ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle='rgba(0,212,255,0.15)';ctx.fill();
+  ctx.restore();
+
+  // Pulse ring
+  if(thinking||speaking){
+    const pr=((t*80)%80);
+    ctx.beginPath();ctx.arc(cx,cy,pr,0,Math.PI*2);ctx.strokeStyle=`rgba(0,212,255,${Math.max(0,1-pr/80)*0.5})`;ctx.lineWidth=1;ctx.stroke();
+  }
+
+  heartAnim = requestAnimationFrame(drawHeart);
+}
+
+function setHeartState(state){
+  heartState = {...heartState,...state};
+  const dot = document.getElementById('core-dot');
+  const lbl = document.getElementById('core-status');
+  if(heartState.thinking){dot.style.background='#ffd700';dot.style.boxShadow='0 0 8px #ffd700';lbl.textContent='PROCESSING';}
+  else if(heartState.speaking){dot.style.background='#00ff88';dot.style.boxShadow='0 0 8px #00ff88';lbl.textContent='RESPONDING';}
+  else if(heartState.listening){dot.style.background='#ff4f9a';dot.style.boxShadow='0 0 8px #ff4f9a';lbl.textContent='LISTENING';}
+  else{dot.style.background='#00d4ff';dot.style.boxShadow='0 0 8px #00d4ff';lbl.textContent='STANDBY';}
+}
+
+initParticles();
+drawHeart();
+
+// ─── CHAT ─────────────────────────────────────────────────────────────────────
+function appendMsg(role, content){
+  const area = document.getElementById('chat-area');
+  const wrap = document.createElement('div');
+  wrap.className = role==='assistant' ? 'msg-wrap-j' : 'msg-wrap-u';
+  const sender = document.createElement('div');
+  sender.className = 'msg-sender';
+  sender.textContent = role==='assistant' ? '◈ JARVIS' : 'YOU';
+  const bubble = document.createElement('div');
+  bubble.className = role==='assistant' ? 'msg-j' : 'msg-u';
+  bubble.textContent = content;
+  wrap.appendChild(sender);wrap.appendChild(bubble);
+  area.appendChild(wrap);
+  area.scrollTop = area.scrollHeight;
+  document.getElementById('stat-msgs').textContent = area.querySelectorAll('.msg-j,.msg-u').length;
+}
+
+function showThinking(){
+  const area = document.getElementById('chat-area');
+  const div = document.createElement('div');
+  div.id = 'thinking-indicator';
+  div.className = 'msg-wrap-j';
+  div.innerHTML = `<div class="msg-sender">◈ JARVIS</div><div class="thinking-badge" style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-left:2px solid #00d4ff"><span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#ffd700">PROCESSING</span><span class="ldot" style="background:#ffd700;box-shadow:0 0 6px #ffd700;animation-delay:0s"></span><span class="ldot" style="background:#ffd700;box-shadow:0 0 6px #ffd700;animation-delay:0.2s;margin:0 3px"></span><span class="ldot" style="background:#ffd700;box-shadow:0 0 6px #ffd700;animation-delay:0.4s"></span></div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function hideThinking(){
+  const el = document.getElementById('thinking-indicator');
+  if(el) el.remove();
+}
+
+async function sendMessage(){
+  const inp = document.getElementById('chat-input');
+  const txt = inp.value.trim();
+  if(!txt || isThinking) return;
+  inp.value='';
+  isThinking=true;
+  document.getElementById('send-btn').disabled=true;
+  appendMsg('user',txt);
+  chatHistory.push({role:'user',content:txt});
+
+  // Auto memory
+  const tags=['project','task','goal','vision','idea'];
+  const tag = tags.find(t=>txt.toLowerCase().includes(t))||'chat';
+  if(txt.length>20){
+    memories.unshift({id:Date.now(),text:txt.slice(0,120),tag,ts:Date.now()});
+    if(memories.length>20) memories.pop();
+    updateStats();
+    renderMemory();
+  }
+
+  setHeartState({thinking:true,speaking:false});
+  showThinking();
+
+  try{
+    const reply = await callClaude(chatHistory.map(m=>({role:m.role,content:m.content})));
+    hideThinking();
+    chatHistory.push({role:'assistant',content:reply});
+    appendMsg('assistant',reply);
+    setHeartState({thinking:false,speaking:true});
+    setTimeout(()=>setHeartState({speaking:false}),2500);
+  }catch(e){
+    hideThinking();
+    appendMsg('assistant','My apologies, Sir. I encountered a neural pathway error. Please ensure your API key is configured and retry.');
+    setHeartState({thinking:false,speaking:false});
+  }
+  isThinking=false;
+  document.getElementById('send-btn').disabled=false;
+}
+
+document.getElementById('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
+
+// ─── MIC ──────────────────────────────────────────────────────────────────────
+function toggleMic(){
+  micActive=!micActive;
+  const btn=document.getElementById('mic-btn');
+  const bars=document.querySelectorAll('.wave-bar');
+  if(micActive){
+    btn.textContent='● REC';btn.classList.add('active');
+    setHeartState({listening:true});
+    bars.forEach(b=>b.classList.add('active'));
+  }else{
+    btn.textContent='🎤 MIC OFF';btn.classList.remove('active');
+    setHeartState({listening:false});
+    bars.forEach(b=>b.classList.remove('active'));
+  }
+}
+
+// ─── STATS ────────────────────────────────────────────────────────────────────
+function updateStats(){
+  document.getElementById('stat-mems').textContent=memories.length;
+  document.getElementById('stat-projs').textContent=projects.length;
+  document.getElementById('hdr-mem').textContent=memories.length+' nodes';
+  document.getElementById('footer-mem').textContent=memories.length+' NODES';
+}
+
+// ─── PROJECTS ─────────────────────────────────────────────────────────────────
+function renderProjects(){
+  const list=document.getElementById('proj-list');
+  list.innerHTML='';
+  projects.forEach(p=>{
+    const div=document.createElement('div');
+    div.className='proj-card panel'+(selectedProject?.id===p.id?' sel':'');
+    div.style.borderColor=selectedProject?.id===p.id?p.color+'60':'rgba(0,212,255,0.1)';
+    div.style.background=selectedProject?.id===p.id?p.color+'08':'';
+    div.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-weight:700;font-size:13px;color:${p.color}">${p.name}</span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:${p.status==='active'?'#00ff88':'#ffd700'};padding:1px 6px;border:1px solid ${p.status==='active'?'#00ff8840':'#ffd70040'};border-radius:1px">${p.status.toUpperCase()}</span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" style="width:${p.progress}%;background:linear-gradient(90deg,${p.color},${p.color}80);box-shadow:0 0 8px ${p.color}"></div></div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(200,230,240,0.4);margin-top:4px">${p.progress}% complete</div>`;
+    div.onclick=()=>{selectedProject=p;renderProjects();renderProjectDetail();};
+    list.appendChild(div);
+  });
+}
+
+function renderProjectDetail(){
+  const el=document.getElementById('proj-detail');
+  if(!selectedProject){el.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(200,230,240,0.3);flex-direction:column;gap:10px"><div style="font-family:Orbitron,monospace;font-size:32px;color:rgba(0,212,255,0.3)">◈</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:12px;letter-spacing:2px">SELECT A PROJECT</div></div>';return;}
+  const p=selectedProject;
+  el.innerHTML=`
+    <div style="animation:fadeInUp 0.3s ease">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+        <div style="width:3px;height:32px;background:${p.color};box-shadow:0 0 10px ${p.color}"></div>
+        <div>
+          <div class="orb-title" style="font-size:20px;color:${p.color}">${p.name}</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(200,230,240,0.4);letter-spacing:1px">PROJECT WORKSPACE</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="panel" style="padding:16px">
+          <div class="slabel">Tasks</div>
+          <div id="task-list" style="display:flex;flex-direction:column;gap:8px">
+            ${p.tasks.map((t,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,212,255,0.06)"><div style="width:14px;height:14px;border:1px solid ${p.color}60;border-radius:1px;cursor:pointer;flex-shrink:0" onclick="completeTask(${i})"></div><span style="font-size:13px;color:rgba(200,230,240,0.8)">${t}</span></div>`).join('')}
+          </div>
+          <button class="btn btn-sm" style="margin-top:10px;width:100%" onclick="addTask()">+ ADD TASK</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="panel" style="padding:16px">
+            <div class="slabel">Notes</div>
+            <p style="font-size:13px;color:rgba(200,230,240,0.7);line-height:1.6">${p.notes||'No notes yet.'}</p>
+          </div>
+          <div class="panel" style="padding:16px">
+            <div class="slabel">Primary Goal</div>
+            <p style="font-size:14px;color:${p.color};line-height:1.6;font-weight:600">${p.goals||'Define your goal.'}</p>
+          </div>
+          <div class="panel" style="padding:16px">
+            <div class="slabel">Progress</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="flex:1"><div class="prog-track"><div class="prog-fill" style="width:${p.progress}%;background:linear-gradient(90deg,${p.color},${p.color}80);box-shadow:0 0 8px ${p.color}"></div></div></div>
+              <span class="orb-title" style="font-size:16px;color:${p.color}">${p.progress}%</span>
+            </div>
+            <input type="range" min="0" max="100" value="${p.progress}" style="width:100%;margin-top:8px;accent-color:${p.color}" oninput="updateProgress(this.value)">
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function addProject(){
+  const name=prompt('Project name:');
+  if(!name) return;
+  const p={id:Date.now(),name,status:'planning',color:'#a855f7',tasks:[],notes:'',goals:'',progress:0};
+  projects.push(p);selectedProject=p;renderProjects();renderProjectDetail();updateStats();
+}
+function addTask(){
+  const t=prompt('New task:');
+  if(!t||!selectedProject) return;
+  selectedProject.tasks.push(t);
+  projects=projects.map(p=>p.id===selectedProject.id?selectedProject:p);
+  renderProjects();renderProjectDetail();
+}
+function completeTask(i){
+  if(!selectedProject) return;
+  selectedProject.tasks.splice(i,1);
+  projects=projects.map(p=>p.id===selectedProject.id?selectedProject:p);
+  renderProjectDetail();
+}
+function updateProgress(v){
+  if(!selectedProject) return;
+  selectedProject.progress=parseInt(v);
+  projects=projects.map(p=>p.id===selectedProject.id?selectedProject:p);
+  document.querySelector('#proj-detail .prog-fill').style.width=v+'%';
+  document.querySelector('#proj-detail .orb-title').textContent=v+'%';
+  renderProjects();
+}
+
+renderProjects();
+
+// ─── AGENTS ───────────────────────────────────────────────────────────────────
+function renderAgentList(){
+  const list=document.getElementById('agent-list');
+  list.innerHTML='';
+  AGENTS.forEach(a=>{
+    const div=document.createElement('div');
+    div.className='agent-card'+(selectedAgent?.id===a.id?' sel':'');
+    if(selectedAgent?.id===a.id) div.style.borderColor=a.color+'50';
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px;color:${a.color}">${a.icon}</span><div><div style="font-weight:700;font-size:13px;color:${a.color}">${a.name} AI</div><div style="font-size:11px;color:rgba(200,230,240,0.4)">${a.desc}</div></div></div>`;
+    div.onclick=()=>{selectedAgent=a;agentHistory=[];renderAgentList();renderAgentUI();};
+    list.appendChild(div);
+  });
+}
+
+function renderAgentUI(){
+  const right=document.getElementById('agent-right');
+  if(!selectedAgent){right.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(200,230,240,0.3);flex-direction:column;gap:10px"><div class="orb-title" style="font-size:28px;color:rgba(0,212,255,0.3)">◈◉◎</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:12px;letter-spacing:2px">SELECT AN AGENT</div></div>';return;}
+  const a=selectedAgent;
+  right.innerHTML=`
+    <div style="padding:12px 20px;border-bottom:1px solid rgba(0,212,255,0.08);background:rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;flex-shrink:0">
+      <span style="font-size:24px;color:${a.color}">${a.icon}</span>
+      <div>
+        <div class="orb-title" style="font-size:16px;color:${a.color}">${a.name.toUpperCase()} AI</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(200,230,240,0.4)">${a.desc}</div>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+        <span class="dot" style="background:${a.color};box-shadow:0 0 8px ${a.color}"></span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:${a.color}">ONLINE</span>
+      </div>
+    </div>
+    <div id="agent-chat" class="chat-area">
+      <div style="text-align:center;padding:40px;color:rgba(200,230,240,0.3)">
+        <div style="font-size:32px;color:${a.color};margin-bottom:8px">${a.icon}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:1px">AGENT READY</div>
+        <div style="font-size:13px;margin-top:8px;color:rgba(200,230,240,0.5)">${a.desc}</div>
+      </div>
+    </div>
+    <div class="chat-footer">
+      <input class="inp" id="agent-input" placeholder="Brief ${a.name} AI..." style="flex:1">
+      <button class="btn" id="agent-send" style="border-color:${a.color}60;color:${a.color}" onclick="sendAgentMessage()">SEND</button>
+    </div>`;
+  document.getElementById('agent-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sendAgentMessage();}});
+}
+
+function appendAgentMsg(role,content){
+  const a=selectedAgent;
+  const area=document.getElementById('agent-chat');
+  if(!area) return;
+  const wrap=document.createElement('div');
+  wrap.className=role==='assistant'?'msg-wrap-j':'msg-wrap-u';
+  const sender=document.createElement('div');
+  sender.className='msg-sender';
+  sender.textContent=role==='assistant'?`◈ ${a.name.toUpperCase()} AI`:'YOU';
+  const bubble=document.createElement('div');
+  bubble.style.cssText=`background:${role==='assistant'?a.color+'08':'rgba(168,85,247,0.06)'};border:1px solid ${role==='assistant'?a.color+'25':'rgba(168,85,247,0.15)'};border-${role==='assistant'?'left':'right'}:2px solid ${role==='assistant'?a.color:'#a855f7'};padding:10px 14px;border-radius:${role==='assistant'?'0 4px 4px 0':'4px 0 0 4px'};font-size:14px;line-height:1.6;white-space:pre-wrap;animation:fadeInUp 0.3s ease;max-width:500px;text-align:${role==='user'?'right':'left'}`;
+  bubble.textContent=content;
+  wrap.appendChild(sender);wrap.appendChild(bubble);
+  area.appendChild(wrap);
+  area.scrollTop=area.scrollHeight;
+}
+
+async function sendAgentMessage(){
+  const inp=document.getElementById('agent-input');
+  if(!inp||!selectedAgent||agentThinking) return;
+  const txt=inp.value.trim();
+  if(!txt) return;
+  inp.value='';agentThinking=true;
+  document.getElementById('agent-send').disabled=true;
+  appendAgentMsg('user',txt);
+  agentHistory.push({role:'user',content:txt});
+
+  // loading
+  const area=document.getElementById('agent-chat');
+  const loadDiv=document.createElement('div');loadDiv.id='agent-loading';loadDiv.className='msg-wrap-j';
+  loadDiv.innerHTML=`<div class="msg-sender">◈ ${selectedAgent.name.toUpperCase()} AI</div><div style="background:${selectedAgent.color}08;border:1px solid ${selectedAgent.color}25;border-left:2px solid ${selectedAgent.color};padding:8px 14px;display:flex;align-items:center;gap:8px"><span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:${selectedAgent.color}">ANALYZING</span><span class="ldot" style="background:${selectedAgent.color};box-shadow:0 0 6px ${selectedAgent.color};animation-delay:0s"></span><span class="ldot" style="background:${selectedAgent.color};box-shadow:0 0 6px ${selectedAgent.color};animation-delay:0.2s;margin:0 3px"></span><span class="ldot" style="background:${selectedAgent.color};box-shadow:0 0 6px ${selectedAgent.color};animation-delay:0.4s"></span></div>`;
+  area.appendChild(loadDiv);area.scrollTop=area.scrollHeight;
+
+  try{
+    const a=selectedAgent;
+    const sys=`You are the ${a.name} AI Agent within JARVIS OS. ${a.personality} You are specialized in ${a.desc}. Be highly tactical, specific, and results-oriented. Use → for action items. Keep responses focused and powerful.`;
+    const reply=await callClaude(agentHistory.map(m=>({role:m.role,content:m.content})),sys);
+    document.getElementById('agent-loading')?.remove();
+    agentHistory.push({role:'assistant',content:reply});
+    appendAgentMsg('assistant',reply);
+  }catch{
+    document.getElementById('agent-loading')?.remove();
+    appendAgentMsg('assistant','Agent connection error. Reconnecting...');
+  }
+  agentThinking=false;
+  const sb=document.getElementById('agent-send');
+  if(sb) sb.disabled=false;
+}
+
+renderAgentList();
+
+// ─── GOD MODE ─────────────────────────────────────────────────────────────────
+async function runGodMode(){
+  const prob=document.getElementById('biz-input').value.trim();
+  if(!prob) return;
+  document.getElementById('gm-btn').disabled=true;
+  document.getElementById('gm-loading').style.display='block';
+  document.getElementById('gm-result').innerHTML='';
+
+  const sys=`You are JARVIS Business God Mode — channeling the combined strategic wisdom of the world's greatest business minds. Return ONLY valid JSON (no markdown, no backticks) with this exact structure:
+{"elon":"3-4 sentence Elon Musk first-principles analysis","bezos":"3-4 sentence Jeff Bezos customer obsession analysis","jobs":"3-4 sentence Steve Jobs simplification analysis","buffett":"3-4 sentence Warren Buffett long-term financial analysis","action_plan":["Week 1: specific action","Week 2: specific action","Week 3: specific action","Week 4: specific action"]}`;
+
+  try{
+    const raw=await callClaude([{role:'user',content:'Business problem: '+prob}],sys);
+    const clean=raw.replace(/```json|```/g,'').trim();
+    const data=JSON.parse(clean);
+    document.getElementById('gm-loading').style.display='none';
+    renderGodModeResult(data);
+  }catch{
+    document.getElementById('gm-loading').style.display='none';
+    document.getElementById('gm-result').innerHTML='<div class="panel" style="padding:16px;border-left:3px solid #ff4f6b;color:#ff4f6b;font-family:\'Share Tech Mono\',monospace;font-size:12px">Analysis failed. Check API connection and retry.</div>';
+  }
+  document.getElementById('gm-btn').disabled=false;
+}
+
+function renderGodModeResult(data){
+  const el=document.getElementById('gm-result');
+  el.style.cssText='display:flex;flex-direction:column;gap:14px;animation:fadeInUp 0.4s ease';
+  const cards=THINKING_STYLES.map(s=>`
+    <div class="panel gm-card" style="border-left-color:${s.color};background:${s.color}04">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="orb-title" style="font-size:13px;color:${s.color}">${s.name.toUpperCase()} THINKING</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(200,230,240,0.3)">— ${s.style}</div>
+      </div>
+      <p style="font-size:14px;line-height:1.7;color:rgba(200,230,240,0.85)">${data[s.key]||'—'}</p>
+    </div>`).join('');
+  const plan=data.action_plan?`
+    <div class="panel" style="padding:20px;border-left:3px solid #00ff88">
+      <div class="orb-title" style="font-size:13px;color:#00ff88;margin-bottom:14px">◆ 4-WEEK EXECUTION PLAN</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${data.action_plan.map((item,i)=>`<div style="display:flex;gap:12px;align-items:flex-start"><div class="orb-title" style="font-size:11px;color:#00ff88;width:20px;flex-shrink:0;padding-top:2px">W${i+1}</div><div style="font-size:13px;color:rgba(200,230,240,0.85);line-height:1.5">${item.replace(/^Week \d+:\s*/i,'')}</div></div>`).join('')}
+      </div>
+    </div>`:'';
+  el.innerHTML=cards+plan;
+}
+
+function resetGodMode(){
+  document.getElementById('biz-input').value='';
+  document.getElementById('gm-result').innerHTML='';
+  document.getElementById('gm-loading').style.display='none';
+  document.getElementById('gm-btn').disabled=false;
+}
+
+// ─── MEMORY ───────────────────────────────────────────────────────────────────
+function addMemory(){
+  const inp=document.getElementById('mem-new');
+  const txt=inp.value.trim();
+  if(!txt) return;
+  memories.unshift({id:Date.now(),text:txt,tag:'note',ts:Date.now()});
+  inp.value='';
+  updateStats();renderMemory();
+}
+
+function deleteMemory(id){
+  memories=memories.filter(m=>m.id!==id);
+  updateStats();renderMemory();
+}
+
+function renderMemory(){
+  const search=document.getElementById('mem-search').value.toLowerCase();
+  const tags=['all','project','task','note','vision','chat'];
+  const tagBtns=document.getElementById('mem-tag-btns');
+  tagBtns.innerHTML=tags.map(t=>`<button class="btn btn-sm" style="opacity:${memFilter===t||(t==='all'&&!memFilter)?1:0.4}" onclick="setMemFilter('${t}')">${t.toUpperCase()}</button>`).join('');
+
+  const filtered=memories.filter(m=>{
+    const matchSearch=!search||m.text.toLowerCase().includes(search)||m.tag.includes(search);
+    const matchFilter=!memFilter||m.tag===memFilter;
+    return matchSearch&&matchFilter;
+  });
+
+  document.getElementById('mem-count').textContent=`MEMORY ENGINE — ${filtered.length} NODES`;
+  const list=document.getElementById('mem-list');
+  if(filtered.length===0){list.innerHTML='<div style="text-align:center;padding:40px;color:rgba(200,230,240,0.3);font-family:\'Share Tech Mono\',monospace;font-size:12px;letter-spacing:2px">NO MEMORY NODES FOUND</div>';return;}
+
+  const tagColors={project:'#00d4ff',task:'#00ff88',vision:'#ffd700',note:'#a855f7',chat:'#ff4f9a'};
+  list.innerHTML=filtered.map(m=>{
+    const c=tagColors[m.tag]||'#a855f7';
+    const date=new Date(m.ts).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    return `<div class="panel mem-node"><div class="mem-tag" style="color:${c};border-color:${c}40">${m.tag.toUpperCase()}</div><div style="flex:1;font-size:13px;color:rgba(200,230,240,0.8);line-height:1.5">${m.text}</div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(200,230,240,0.25)">${date}</div><button onclick="deleteMemory(${m.id})" style="background:none;border:none;color:rgba(255,79,107,0.4);cursor:pointer;font-size:12px;padding:0;line-height:1">✕</button></div></div>`;
+  }).join('');
+}
+
+function setMemFilter(tag){
+  memFilter=tag==='all'?'':tag;
+  renderMemory();
+}
+
+renderMemory();
+updateStats();
+</script>
+</body>
+</html>
