@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#020810">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>JARVIS OS + MIND LAB — Neural AI Ecosystem</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --neon:#00d4ff;--neon2:#00ff88;--accent:#a855f7;--danger:#ff4f6b;--gold:#ffd700;
+  --bg:#020810;--text:#c8e6f0;--red:#ff4f6b;--orange:#ff9500;--pink:#ff4f9a;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif}
+#app{width:100vw;height:100vh;display:flex;flex-direction:column;overflow:hidden;
+  background:radial-gradient(ellipse at 20% 50%,rgba(0,212,255,0.04) 0%,transparent 60%),
+             radial-gradient(ellipse at 80% 20%,rgba(168,85,247,0.04) 0%,transparent 60%),
+             #020810;position:relative;}
+.grid-overlay{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,212,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.025) 1px,transparent 1px);
+  background-size:60px 60px;}
+.scanline{position:fixed;inset:0;pointer-events:none;z-index:999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);}
+.corner{position:fixed;width:18px;height:18px;border-color:var(--neon);border-style:solid;opacity:0.35;z-index:1000}
+.corner-tl{top:8px;left:8px;border-width:1px 0 0 1px}
+.corner-tr{top:8px;right:8px;border-width:1px 1px 0 0}
+.corner-bl{bottom:8px;left:8px;border-width:0 0 1px 1px}
+.corner-br{bottom:8px;right:8px;border-width:0 1px 1px 0}
+
+@keyframes rot{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes rotC{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes wave{0%,100%{height:4px}50%{height:20px}}
+@keyframes glowP{0%,100%{box-shadow:0 0 15px rgba(0,212,255,0.3)}50%{box-shadow:0 0 35px rgba(0,212,255,0.6)}}
+@keyframes shieldPulse{0%,100%{transform:scale(1);opacity:0.8}50%{transform:scale(1.05);opacity:1}}
+@keyframes dataStream{0%{transform:translateY(-10px);opacity:0}50%{opacity:1}100%{transform:translateY(10px);opacity:0}}
+@keyframes threatAlert{0%,100%{background:rgba(255,79,107,0.05)}50%{background:rgba(255,79,107,0.15)}}
+@keyframes voiceIn{from{opacity:0;transform:scale(0.9) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes orbit{from{transform:rotate(0deg) translateX(60px) rotate(0deg)}to{transform:rotate(360deg) translateX(60px) rotate(-360deg)}}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;
+  border-bottom:1px solid rgba(0,212,255,0.1);background:rgba(0,0,0,0.6);
+  backdrop-filter:blur(20px);z-index:100;flex-shrink:0;position:relative;}
+.logo-ring{width:34px;height:34px;position:relative;flex-shrink:0}
+.logo-ring::before{content:'';position:absolute;inset:0;border:1px solid rgba(0,212,255,0.5);border-radius:50%;animation:rot 6s linear infinite}
+.logo-ring::after{content:'';position:absolute;inset:4px;border:1px solid rgba(0,212,255,0.2);border-radius:50%;animation:rotC 4s linear infinite}
+.logo-core{position:absolute;inset:8px;background:rgba(0,212,255,0.35);border-radius:50%;box-shadow:0 0 12px rgba(0,212,255,0.6)}
+.brand{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;color:#00d4ff;letter-spacing:3px;text-shadow:0 0 18px rgba(0,212,255,0.8)}
+.brand-sub{font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(0,212,255,0.4);letter-spacing:2px}
+.hstat{text-align:center}
+.hstat-l{font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.3);letter-spacing:1px}
+.hstat-v{font-family:'Share Tech Mono',monospace;font-size:10px}
+.clk{font-family:'Orbitron',monospace;font-size:19px;color:#00d4ff;letter-spacing:2px;line-height:1;text-align:right}
+.clk-d{font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(0,212,255,0.4);letter-spacing:1px;text-align:right}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid rgba(0,212,255,0.08);background:rgba(0,0,0,0.4);flex-shrink:0;overflow-x:auto;z-index:10;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:9px 14px;cursor:pointer;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  color:rgba(200,230,240,0.3);border-bottom:2px solid transparent;transition:all 0.2s;
+  font-family:'Share Tech Mono',monospace;white-space:nowrap;user-select:none;flex-shrink:0}
+.tab:hover{color:var(--neon)}
+.tab.active{color:var(--neon);border-bottom-color:var(--neon);text-shadow:0 0 8px rgba(0,212,255,0.5)}
+.tab.security.active{color:var(--danger);border-bottom-color:var(--danger);text-shadow:0 0 8px rgba(255,79,107,0.5)}
+.tab.mindlab.active{color:var(--accent);border-bottom-color:var(--accent);text-shadow:0 0 8px rgba(168,85,247,0.5)}
+.tab.earth.active{color:var(--neon2);border-bottom-color:var(--neon2)}
+
+/* LAYOUT */
+.main{flex:1;overflow:hidden;display:flex;position:relative}
+.tab-panel{display:none;width:100%;height:100%;overflow:hidden}
+.tab-panel.active{display:flex}
+
+/* PANELS */
+.panel{background:rgba(0,212,255,0.02);border:1px solid rgba(0,212,255,0.12);border-radius:2px;position:relative;overflow:hidden}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.4),transparent);pointer-events:none}
+.panel-red{border-color:rgba(255,79,107,0.15);background:rgba(255,79,107,0.02)}
+.panel-red::before{background:linear-gradient(90deg,transparent,rgba(255,79,107,0.4),transparent)}
+.panel-purple{border-color:rgba(168,85,247,0.15);background:rgba(168,85,247,0.02)}
+.panel-purple::before{background:linear-gradient(90deg,transparent,rgba(168,85,247,0.4),transparent)}
+.panel-green{border-color:rgba(0,255,136,0.15);background:rgba(0,255,136,0.02)}
+
+/* SIDEBAR */
+.sidebar{flex-shrink:0;border-right:1px solid rgba(0,212,255,0.08);background:rgba(0,0,0,0.25);overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+
+/* BUTTONS */
+.btn{background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.28);color:var(--neon);
+  font-family:'Rajdhani',sans-serif;font-weight:600;font-size:12px;letter-spacing:1px;
+  text-transform:uppercase;padding:7px 14px;cursor:pointer;transition:all 0.2s;border-radius:1px}
+.btn:hover{background:rgba(0,212,255,0.14);border-color:rgba(0,212,255,0.6);box-shadow:0 0 16px rgba(0,212,255,0.25)}
+.btn:active{transform:scale(0.98)}
+.btn.active{background:rgba(0,212,255,0.18);border-color:var(--neon);box-shadow:0 0 16px rgba(0,212,255,0.35)}
+.btn:disabled{opacity:0.35;cursor:not-allowed}
+.btn-gold{border-color:rgba(255,215,0,0.35);color:#ffd700}
+.btn-gold:hover{background:rgba(255,215,0,0.08);border-color:#ffd700;box-shadow:0 0 16px rgba(255,215,0,0.25)}
+.btn-red{border-color:rgba(255,79,107,0.35);color:#ff4f6b}
+.btn-red:hover{background:rgba(255,79,107,0.08);border-color:#ff4f6b;box-shadow:0 0 16px rgba(255,79,107,0.25)}
+.btn-purple{border-color:rgba(168,85,247,0.35);color:#a855f7}
+.btn-purple:hover{background:rgba(168,85,247,0.08);border-color:#a855f7;box-shadow:0 0 16px rgba(168,85,247,0.25)}
+.btn-green{border-color:rgba(0,255,136,0.35);color:#00ff88}
+.btn-sm{font-size:10px;padding:4px 10px;letter-spacing:0.5px}
+
+/* INPUT */
+.inp{background:rgba(0,212,255,0.03);border:1px solid rgba(0,212,255,0.18);border-radius:1px;
+  color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;padding:9px 12px;
+  width:100%;outline:none;transition:all 0.2s}
+.inp:focus{border-color:rgba(0,212,255,0.45);box-shadow:0 0 10px rgba(0,212,255,0.08)}
+.inp::placeholder{color:rgba(200,230,240,0.28)}
+textarea.inp{resize:none}
+
+.slabel{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(0,212,255,0.5);margin-bottom:7px}
+.slabel-red{color:rgba(255,79,107,0.6)}
+.slabel-purple{color:rgba(168,85,247,0.6)}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--neon2);box-shadow:0 0 7px var(--neon2)}
+.prog-track{height:2px;background:rgba(0,212,255,0.08);border-radius:1px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--neon),var(--neon2));box-shadow:0 0 7px var(--neon);border-radius:1px;transition:width 0.8s ease}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--neon);animation:blink 1s ease-in-out infinite;display:inline-block}
+
+/* MESSAGES */
+.msg-j{background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.14);border-left:2px solid var(--neon);padding:9px 13px;border-radius:0 4px 4px 0;animation:fadeUp 0.3s ease;font-size:13px;line-height:1.6;white-space:pre-wrap;max-width:520px}
+.msg-u{background:rgba(168,85,247,0.05);border:1px solid rgba(168,85,247,0.14);border-right:2px solid var(--accent);padding:9px 13px;border-radius:4px 0 0 4px;animation:fadeUp 0.3s ease;font-size:13px;line-height:1.6;white-space:pre-wrap;max-width:500px;text-align:right}
+.msg-sender{font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(200,230,240,0.28);margin-bottom:3px;letter-spacing:1px}
+.msg-wrap-j{display:flex;flex-direction:column;align-items:flex-start;align-self:flex-start}
+.msg-wrap-u{display:flex;flex-direction:column;align-items:flex-end;align-self:flex-end}
+
+.chat-area{flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:10px}
+.chat-footer{padding:10px 16px;border-top:1px solid rgba(0,212,255,0.07);background:rgba(0,0,0,0.35);display:flex;gap:8px;flex-shrink:0}
+
+.waveform{display:flex;align-items:center;gap:2px;height:22px}
+.wave-bar{width:2.5px;background:var(--neon);border-radius:2px;height:4px}
+.wave-bar.on{animation:wave 0.6s ease-in-out infinite}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.25);border-radius:2px}
+
+/* AGENT CARD */
+.agent-card{padding:10px;cursor:pointer;border:1px solid rgba(0,212,255,0.1);border-radius:2px;transition:all 0.2s;background:rgba(0,212,255,0.015);user-select:none}
+.agent-card:hover{transform:translateY(-1px);background:rgba(0,212,255,0.04)}
+.agent-card.sel{border-color:rgba(0,212,255,0.45)!important;background:rgba(0,212,255,0.07)!important}
+
+/* SECURITY AGENT */
+.sec-agent{padding:9px 12px;border:1px solid rgba(255,79,107,0.1);border-radius:2px;background:rgba(255,79,107,0.02);cursor:pointer;transition:all 0.2s}
+.sec-agent:hover{border-color:rgba(255,79,107,0.3);background:rgba(255,79,107,0.05)}
+.sec-agent.active{border-color:rgba(0,255,136,0.4);background:rgba(0,255,136,0.04)}
+.sec-agent.alert{animation:threatAlert 1s ease-in-out infinite}
+
+/* MIND LAB */
+.upload-zone{border:1px dashed rgba(168,85,247,0.3);border-radius:2px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(168,85,247,0.02)}
+.upload-zone:hover{border-color:rgba(168,85,247,0.6);background:rgba(168,85,247,0.05)}
+.upload-zone.drag{border-color:#a855f7;background:rgba(168,85,247,0.08);box-shadow:0 0 20px rgba(168,85,247,0.2)}
+.training-item{padding:10px 14px;border:1px solid rgba(168,85,247,0.12);border-radius:2px;background:rgba(168,85,247,0.02);display:flex;gap:10px;align-items:flex-start;animation:fadeUp 0.3s ease}
+
+/* SHIELD */
+.shield-ring{border-radius:50%;border:1px solid;animation:shieldPulse 2s ease-in-out infinite}
+.threat-item{padding:8px 12px;border-left:2px solid;border-radius:0 2px 2px 0;background:rgba(0,0,0,0.3);animation:fadeUp 0.3s ease}
+
+/* VOICE OVERLAY */
+#voice-overlay{position:fixed;inset:0;z-index:5000;display:none;align-items:center;justify-content:center;background:rgba(2,8,16,0.85);backdrop-filter:blur(12px)}
+#voice-overlay.show{display:flex}
+#voice-box{width:min(600px,90vw);background:rgba(0,10,20,0.95);border:1px solid rgba(0,212,255,0.3);border-radius:4px;padding:24px;animation:voiceIn 0.3s ease;box-shadow:0 0 60px rgba(0,212,255,0.15)}
+
+/* MPIN MODAL */
+#mpin-modal{position:fixed;inset:0;z-index:6000;display:none;align-items:center;justify-content:center;background:rgba(2,8,16,0.9);backdrop-filter:blur(15px)}
+#mpin-modal.show{display:flex}
+.mpin-box{width:320px;background:rgba(0,10,20,0.98);border:1px solid rgba(0,212,255,0.3);border-radius:4px;padding:28px;text-align:center;box-shadow:0 0 60px rgba(0,212,255,0.2)}
+.mpin-digit{width:44px;height:56px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.25);border-radius:2px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:24px;color:#00d4ff;letter-spacing:0;transition:all 0.2s}
+.mpin-digit.filled{border-color:rgba(0,212,255,0.6);box-shadow:0 0 12px rgba(0,212,255,0.3)}
+.mpin-key{width:64px;height:48px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:2px;font-family:'Orbitron',monospace;font-size:16px;color:#00d4ff;cursor:pointer;transition:all 0.2s;font-weight:700}
+.mpin-key:hover{background:rgba(0,212,255,0.12);border-color:rgba(0,212,255,0.5)}
+.mpin-key:active{transform:scale(0.95)}
+
+/* 3D EARTH */
+#earth-canvas{display:block;width:100%;height:100%}
+.earth-overlay{position:absolute;pointer-events:none}
+.earth-info{position:absolute;background:rgba(0,10,20,0.85);border:1px solid rgba(0,212,255,0.25);border-radius:2px;padding:10px 14px;backdrop-filter:blur(10px);font-family:'Share Tech Mono',monospace;font-size:10px;color:#00d4ff;animation:fadeUp 0.3s ease}
+
+/* FOOTER */
+footer{display:flex;align-items:center;justify-content:space-between;padding:5px 18px;
+  border-top:1px solid rgba(0,212,255,0.07);background:rgba(0,0,0,0.65);flex-shrink:0;position:relative;z-index:10}
+
+/* MEM NODE */
+.mem-node{padding:10px 14px;display:flex;gap:10px;align-items:flex-start;animation:fadeUp 0.3s ease}
+.mem-tag{font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 5px;border:1px solid;border-radius:1px;text-align:center;flex-shrink:0;width:50px}
+
+/* PROJECT CARD */
+.proj-card{padding:11px;cursor:pointer;border:1px solid rgba(0,212,255,0.1);border-radius:2px;transition:all 0.2s;background:rgba(0,212,255,0.02)}
+.proj-card:hover,.proj-card.sel{border-color:rgba(0,212,255,0.3);background:rgba(0,212,255,0.04)}
+
+/* GOD MODE */
+.gm-card{padding:18px;border-left-width:3px;border-left-style:solid}
+
+/* RESPONSIVE MOBILE */
+@media(max-width:640px){
+  .sidebar{width:160px!important}
+  .brand{font-size:13px;letter-spacing:2px}
+  .clk{font-size:15px}
+  .msg-j,.msg-u{max-width:82vw;font-size:12px}
+  .tab{padding:8px 10px;font-size:9px}
+  header{padding:7px 12px}
+  #voice-box{padding:16px}
+}
+@media(max-width:420px){
+  .sidebar{width:140px!important}
+  .tab{padding:7px 8px;font-size:8px;letter-spacing:0.5px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="grid-overlay"></div>
+  <div class="scanline"></div>
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+
+  <!-- VOICE OVERLAY -->
+  <div id="voice-overlay">
+    <div id="voice-box">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+        <div style="position:relative;width:48px;height:48px;flex-shrink:0">
+          <div class="shield-ring" style="position:absolute;inset:0;border-color:rgba(0,212,255,0.5);animation-duration:1s"></div>
+          <div class="shield-ring" style="position:absolute;inset:8px;border-color:rgba(0,212,255,0.3);animation-duration:1.4s;animation-delay:0.2s"></div>
+          <div style="position:absolute;inset:16px;background:rgba(0,212,255,0.4);border-radius:50%;box-shadow:0 0 15px rgba(0,212,255,0.7)"></div>
+        </div>
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#00d4ff;letter-spacing:2px">VOICE COMMAND</div>
+          <div id="voice-status" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,212,255,0.5);letter-spacing:1px;margin-top:2px">LISTENING...</div>
+        </div>
+        <button onclick="closeVoice()" style="margin-left:auto;background:none;border:1px solid rgba(255,79,107,0.3);color:#ff4f6b;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:11px;padding:5px 10px;cursor:pointer;border-radius:1px;letter-spacing:1px">CLOSE</button>
+      </div>
+      <!-- Waveform -->
+      <div style="display:flex;align-items:center;gap:2px;height:40px;justify-content:center;margin-bottom:16px" id="voice-wave">
+        <script>for(let i=0;i<24;i++)document.write(`<div class="wave-bar on" style="animation-delay:${i*0.05}s;animation-duration:${0.4+(i%5)*0.08}s"></div>`)</script>
+      </div>
+      <!-- Live transcript -->
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,212,255,0.4);letter-spacing:1px;margin-bottom:6px">LIVE TRANSCRIPT</div>
+      <div id="voice-live" style="background:rgba(0,212,255,0.03);border:1px solid rgba(0,212,255,0.15);padding:10px 14px;min-height:48px;font-size:13px;line-height:1.6;color:rgba(200,230,240,0.8);border-radius:1px;margin-bottom:12px;font-style:italic">Waiting for speech...</div>
+      <!-- Editable command -->
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,212,255,0.4);letter-spacing:1px;margin-bottom:6px">EDIT COMMAND BEFORE SENDING</div>
+      <textarea id="voice-edit" class="inp" rows="3" style="font-family:'Share Tech Mono',monospace;font-size:12px" placeholder="Your command will appear here..."></textarea>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-green" style="flex:1;font-size:12px" onclick="confirmVoiceCommand()">▶ EXECUTE COMMAND</button>
+        <button class="btn btn-sm" onclick="clearVoice()" style="font-size:11px">CLEAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MPIN MODAL -->
+  <div id="mpin-modal">
+    <div class="mpin-box">
+      <div style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:#00d4ff;letter-spacing:3px;margin-bottom:4px">SECURE ACCESS</div>
+      <div id="mpin-proj-name" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(0,212,255,0.5);margin-bottom:20px">PROJECT MPIN</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:20px" id="mpin-display">
+        <div class="mpin-digit" id="md0">_</div>
+        <div class="mpin-digit" id="md1">_</div>
+        <div class="mpin-digit" id="md2">_</div>
+        <div class="mpin-digit" id="md3">_</div>
+      </div>
+      <div id="mpin-numpad" style="display:grid;grid-template-columns:repeat(3,64px);gap:6px;justify-content:center;margin-bottom:16px"></div>
+      <div id="mpin-error" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#ff4f6b;margin-top:8px;min-height:16px"></div>
+      <button class="btn btn-sm btn-red" onclick="closeMpin()" style="margin-top:10px;width:100%">CANCEL</button>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="logo-ring"><div class="logo-core"></div></div>
+      <div>
+        <div class="brand">JARVIS OS<span style="color:#a855f7;font-size:11px;letter-spacing:2px;margin-left:8px">+MIND LAB</span></div>
+        <div class="brand-sub">NEURAL AI ECOSYSTEM v5.0 · ULTRA SECURE</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:18px;align-items:center">
+      <div class="hstat"><div class="hstat-l">SHIELD</div><div class="hstat-v" id="hdr-shield" style="color:#00ff88">ACTIVE</div></div>
+      <div class="hstat"><div class="hstat-l">AGENTS</div><div class="hstat-v" style="color:#00d4ff">33 LIVE</div></div>
+      <div class="hstat"><div class="hstat-l">MEM</div><div class="hstat-v" id="hdr-mem" style="color:#a855f7">0 nodes</div></div>
+      <div class="hstat hstat-hide"><div class="hstat-l">THREAT</div><div class="hstat-v" id="hdr-threat" style="color:#00ff88">NONE</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="btn btn-sm" onclick="openVoice()" style="font-size:9px;padding:5px 10px">🎤 VOICE</button>
+      <div>
+        <div class="clk" id="clock">00:00:00</div>
+        <div class="clk-d" id="clock-date">---</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" data-tab="assistant">⬡ JARVIS</div>
+    <div class="tab" data-tab="projects">◈ Projects</div>
+    <div class="tab" data-tab="agents">◉ AI Team</div>
+    <div class="tab mindlab" data-tab="mindlab">◎ Mind Lab</div>
+    <div class="tab security" data-tab="security">⚠ Security</div>
+    <div class="tab earth" data-tab="earth">🌍 Earth</div>
+    <div class="tab" data-tab="godmode">⚡ God Mode</div>
+    <div class="tab" data-tab="memory">◇ Memory</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- ── ASSISTANT TAB ── -->
+    <div class="tab-panel active" id="panel-assistant">
+      <div class="sidebar" style="width:195px;align-items:center">
+        <canvas id="heart-canvas" width="175" height="175"></canvas>
+        <div style="display:flex;gap:5px;align-items:center;margin-top:-4px">
+          <span class="dot" id="core-dot"></span>
+          <span id="core-status" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,212,255,0.6);letter-spacing:1px">STANDBY</span>
+        </div>
+        <div style="width:100%;display:flex;flex-direction:column;gap:6px;margin-top:2px">
+          <div class="panel" style="padding:7px 9px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;color:rgba(200,230,240,0.45)">Messages</span>
+            <span style="font-family:'Orbitron',monospace;font-size:12px;color:#00d4ff" id="stat-msgs">1</span>
+          </div>
+          <div class="panel" style="padding:7px 9px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;color:rgba(200,230,240,0.45)">Memories</span>
+            <span style="font-family:'Orbitron',monospace;font-size:12px;color:#a855f7" id="stat-mems">0</span>
+          </div>
+          <div class="panel" style="padding:7px 9px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;color:rgba(200,230,240,0.45)">Projects</span>
+            <span style="font-family:'Orbitron',monospace;font-size:12px;color:#00ff88" id="stat-projs">2</span>
+          </div>
+          <div class="panel panel-red" style="padding:7px 9px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;color:rgba(200,230,240,0.45)">Threats</span>
+            <span style="font-family:'Orbitron',monospace;font-size:12px;color:#00ff88" id="stat-threats">0</span>
+          </div>
+        </div>
+        <div style="width:100%">
+          <div class="slabel">Voice System</div>
+          <button class="btn btn-sm" id="mic-btn" style="width:100%;margin-bottom:5px" onclick="toggleMic()">🎤 MIC OFF</button>
+          <div class="waveform" id="waveform" style="justify-content:center;padding:2px 0">
+            <div class="wave-bar" style="animation-delay:0s"></div><div class="wave-bar" style="animation-delay:0.06s"></div>
+            <div class="wave-bar" style="animation-delay:0.12s"></div><div class="wave-bar" style="animation-delay:0.18s"></div>
+            <div class="wave-bar" style="animation-delay:0.24s"></div><div class="wave-bar" style="animation-delay:0.30s"></div>
+            <div class="wave-bar" style="animation-delay:0.36s"></div><div class="wave-bar" style="animation-delay:0.42s"></div>
+            <div class="wave-bar" style="animation-delay:0.48s"></div><div class="wave-bar" style="animation-delay:0.54s"></div>
+            <div class="wave-bar" style="animation-delay:0.60s"></div><div class="wave-bar" style="animation-delay:0.66s"></div>
+          </div>
+        </div>
+        <button class="btn btn-sm" style="width:100%;font-size:9px;opacity:0.5" onclick="clearChat()">⊗ CLEAR CHAT</button>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div class="chat-area" id="chat-area">
+          <div class="msg-wrap-j">
+            <div class="msg-sender">◈ JARVIS + MIND LAB v5.0</div>
+            <div class="msg-j">All systems online. Neural Shield active. 33 AI agents deployed. MIND LAB training system ready. How may I assist you, Sir?
+
+◆ New capabilities:
+→ Mind Lab AI training system
+→ Neural Shield Security (10 agents)
+→ 3D Earth intelligence view
+→ Voice command center
+→ 25 research AI agents
+→ Project MPIN security</div>
+          </div>
+        </div>
+        <div class="chat-footer">
+          <input class="inp" id="chat-input" placeholder="Command JARVIS..." style="flex:1;font-size:14px">
+          <button class="btn" id="send-btn" onclick="sendMessage()">SEND</button>
+          <button class="btn btn-sm" onclick="openVoice()" style="font-size:11px">🎤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PROJECTS TAB ── -->
+    <div class="tab-panel" id="panel-projects">
+      <div class="sidebar" style="width:230px">
+        <div class="slabel">Projects</div>
+        <div id="proj-list"></div>
+        <button class="btn btn-sm" style="width:100%;margin-top:4px" onclick="addProject()">+ NEW PROJECT</button>
+        <hr style="border:none;border-top:1px solid rgba(0,212,255,0.08);margin:4px 0">
+        <div class="slabel" style="margin-top:2px">Connected Platforms</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          <span style="font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 6px;border:1px solid rgba(0,212,255,0.2);border-radius:1px;color:rgba(0,212,255,0.5)">Gmail</span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 6px;border:1px solid rgba(255,79,107,0.2);border-radius:1px;color:rgba(255,79,107,0.5)">Calendar</span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 6px;border:1px solid rgba(0,119,181,0.3);border-radius:1px;color:rgba(0,119,181,0.7)">LinkedIn</span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 6px;border:1px solid rgba(168,85,247,0.2);border-radius:1px;color:rgba(168,85,247,0.5)">Instagram</span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 6px;border:1px solid rgba(24,119,242,0.2);border-radius:1px;color:rgba(24,119,242,0.5)">Facebook</span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 6px;border:1px solid rgba(255,0,0,0.2);border-radius:1px;color:rgba(255,80,80,0.5)">YouTube</span>
+        </div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:18px" id="proj-detail">
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(200,230,240,0.2);flex-direction:column;gap:10px">
+          <div style="font-family:'Orbitron',monospace;font-size:28px">◈</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px">SELECT A PROJECT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── AI TEAM TAB ── -->
+    <div class="tab-panel" id="panel-agents">
+      <div class="sidebar" style="width:250px;gap:6px">
+        <div class="slabel">AI Agent Team (8)</div>
+        <div id="agent-list"></div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden" id="agent-right">
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(200,230,240,0.2);flex-direction:column;gap:10px">
+          <div style="font-family:'Orbitron',monospace;font-size:26px">◈◉◎</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px">SELECT AN AGENT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MIND LAB TAB ── -->
+    <div class="tab-panel" id="panel-mindlab" style="flex-direction:column;overflow-y:auto">
+      <div style="max-width:900px;margin:0 auto;padding:20px;width:100%">
+        <!-- Mind Lab Header -->
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="font-family:'Orbitron',monospace;font-size:24px;font-weight:900;color:#a855f7;text-shadow:0 0 30px rgba(168,85,247,0.6);letter-spacing:4px;margin-bottom:4px">◎ MIND LAB</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(168,85,247,0.5);letter-spacing:3px">NEURAL TRAINING LABORATORY · AI KNOWLEDGE ENGINE</div>
+          <div style="display:flex;justify-content:center;gap:16px;margin-top:12px;flex-wrap:wrap">
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;padding:3px 10px;border:1px solid rgba(168,85,247,0.3);border-radius:1px;color:rgba(168,85,247,0.7)">KNOWLEDGE NODES: <span id="ml-count">0</span></div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;padding:3px 10px;border:1px solid rgba(0,255,136,0.3);border-radius:1px;color:rgba(0,255,136,0.7)">STATUS: READY</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;padding:3px 10px;border:1px solid rgba(255,215,0,0.3);border-radius:1px;color:rgba(255,215,0,0.7)">RESEARCH AGENTS: 15</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <!-- Train with Text -->
+          <div class="panel panel-purple" style="padding:18px">
+            <div class="slabel slabel-purple">Train with Text / Prompt</div>
+            <textarea class="inp" id="ml-text" rows="4" placeholder="Enter knowledge, instructions, or training data for JARVIS..." style="border-color:rgba(168,85,247,0.2)"></textarea>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <select class="inp" id="ml-tag" style="flex:1;padding:7px 10px;font-size:12px;min-width:120px;border-color:rgba(168,85,247,0.2)">
+                <option value="knowledge">Knowledge</option><option value="prompt">Prompt Template</option>
+                <option value="instruction">Instruction</option><option value="research">Research</option>
+                <option value="strategy">Strategy</option><option value="workflow">Workflow</option>
+              </select>
+              <button class="btn btn-purple" onclick="addTrainingData()" style="font-size:11px;padding:7px 14px">+ TRAIN</button>
+            </div>
+          </div>
+
+          <!-- URL Learning -->
+          <div class="panel panel-purple" style="padding:18px">
+            <div class="slabel slabel-purple">URL / Web Learning</div>
+            <input class="inp" id="ml-url" placeholder="https://website.com — JARVIS will learn from it" style="border-color:rgba(168,85,247,0.2);margin-bottom:8px">
+            <textarea class="inp" id="ml-url-context" rows="2" placeholder="What should JARVIS learn from this URL?" style="border-color:rgba(168,85,247,0.2)"></textarea>
+            <button class="btn btn-purple" onclick="learnFromUrl()" style="width:100%;margin-top:8px;font-size:11px">◎ LEARN FROM URL</button>
+          </div>
+        </div>
+
+        <!-- File Upload Zone -->
+        <div class="panel panel-purple" style="padding:18px;margin-bottom:16px">
+          <div class="slabel slabel-purple">Upload Training Files</div>
+          <div class="upload-zone" id="upload-zone" onclick="document.getElementById('ml-file').click()" 
+               ondragover="event.preventDefault();this.classList.add('drag')"
+               ondragleave="this.classList.remove('drag')"
+               ondrop="handleFileDrop(event)">
+            <div style="font-size:28px;margin-bottom:8px">📁</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(168,85,247,0.7);letter-spacing:1px">DROP FILES HERE OR CLICK TO UPLOAD</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.3);margin-top:4px">PDF · DOC · CSV · TXT · IMAGES · VIDEOS</div>
+          </div>
+          <input type="file" id="ml-file" multiple accept=".pdf,.doc,.docx,.csv,.txt,.png,.jpg,.mp4,.json" style="display:none" onchange="handleFileUpload(event)">
+          <div id="upload-list" style="display:flex;flex-direction:column;gap:5px;margin-top:10px"></div>
+        </div>
+
+        <!-- Research Agents -->
+        <div class="panel panel-purple" style="padding:18px;margin-bottom:16px">
+          <div class="slabel slabel-purple">Mind Lab Research Agents (15)</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
+            <div id="research-agents-grid"></div>
+          </div>
+        </div>
+
+        <!-- Training Log -->
+        <div class="panel panel-purple" style="padding:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div class="slabel slabel-purple" style="margin:0">Training Knowledge Base</div>
+            <div style="display:flex;gap:6px">
+              <input class="inp" id="ml-search" placeholder="Search..." style="width:160px;padding:5px 10px;font-size:12px;border-color:rgba(168,85,247,0.2)" oninput="renderTraining()">
+              <button class="btn btn-sm btn-purple" onclick="clearTraining()" style="font-size:9px">CLEAR ALL</button>
+            </div>
+          </div>
+          <div id="training-log" style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECURITY TAB ── -->
+    <div class="tab-panel" id="panel-security">
+      <div class="sidebar" style="width:230px;gap:6px">
+        <div class="slabel slabel-red">Neural Shield</div>
+        <!-- Shield visualization -->
+        <div style="display:flex;align-items:center;justify-content:center;padding:16px 0;position:relative">
+          <div style="position:relative;width:110px;height:110px">
+            <div class="shield-ring" style="position:absolute;inset:0;border-color:rgba(0,255,136,0.4);border-width:1px;animation-duration:3s"></div>
+            <div class="shield-ring" style="position:absolute;inset:12px;border-color:rgba(0,255,136,0.3);border-width:1px;animation-duration:2.5s;animation-delay:0.3s"></div>
+            <div class="shield-ring" style="position:absolute;inset:24px;border-color:rgba(0,255,136,0.2);border-width:1px;animation-duration:2s;animation-delay:0.6s"></div>
+            <div style="position:absolute;inset:36px;background:rgba(0,255,136,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(0,255,136,0.3)">
+              <div style="font-family:'Orbitron',monospace;font-size:11px;color:#00ff88;font-weight:700">SHIELD</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;justify-content:center;margin-top:-8px;margin-bottom:4px">
+          <span class="dot" id="shield-dot" style="background:#00ff88;box-shadow:0 0 7px #00ff88"></span>
+          <span id="shield-status" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#00ff88;letter-spacing:1px">ACTIVE</span>
+        </div>
+        <div style="width:100%;display:flex;flex-direction:column;gap:5px">
+          <div class="panel panel-red" style="padding:7px 9px;display:flex;justify-content:space-between">
+            <span style="font-size:10px;color:rgba(200,230,240,0.45)">Threats Detected</span>
+            <span style="font-family:'Orbitron',monospace;font-size:12px;color:#00ff88" id="sec-threats">0</span>
+          </div>
+          <div class="panel panel-red" style="padding:7px 9px;display:flex;justify-content:space-between">
+            <span style="font-size:10px;color:rgba(200,230,240,0.45)">Blocked Attacks</span>
+            <span style="font-family:'Orbitron',monospace;font-size:12px;color:#00ff88" id="sec-blocked">0</span>
+          </div>
+          <div class="panel panel-red" style="padding:7px 9px;display:flex;justify-content:space-between">
+            <span style="font-size:10px;color:rgba(200,230,240,0.45)">Active Agents</span>
+            <span style="font-family:'Orbitron',monospace;font-size:12px;color:#00d4ff">10</span>
+          </div>
+        </div>
+        <button class="btn btn-red btn-sm" style="width:100%;margin-top:4px" onclick="runSecurityScan()">⚡ FULL SCAN</button>
+        <button class="btn btn-sm" style="width:100%;font-size:9px;border-color:rgba(255,215,0,0.3);color:#ffd700" onclick="emergencyLockdown()">🔒 LOCKDOWN</button>
+      </div>
+
+      <!-- Security Main -->
+      <div style="flex:1;overflow-y:auto;padding:18px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <!-- Security agents grid -->
+          <div class="panel panel-red" style="padding:16px">
+            <div class="slabel slabel-red">Security AI Agents (10)</div>
+            <div id="sec-agents-grid" style="display:flex;flex-direction:column;gap:6px"></div>
+          </div>
+          <!-- Threat log -->
+          <div class="panel panel-red" style="padding:16px">
+            <div class="slabel slabel-red">Threat Intelligence Log</div>
+            <div id="threat-log" style="display:flex;flex-direction:column;gap:5px;max-height:280px;overflow-y:auto">
+              <div class="threat-item" style="border-left-color:rgba(0,255,136,0.5)">
+                <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#00ff88">SYSTEM CLEAR</div>
+                <div style="font-size:11px;color:rgba(200,230,240,0.6);margin-top:2px">All security checks passed. Neural Shield active.</div>
+                <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.25);margin-top:3px" id="init-time"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Security metrics -->
+        <div class="panel panel-red" style="padding:16px">
+          <div class="slabel slabel-red">Security Metrics</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px">
+            <div class="panel" style="padding:12px;text-align:center">
+              <div style="font-family:'Orbitron',monospace;font-size:22px;color:#00ff88;margin-bottom:4px">100%</div>
+              <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.35);letter-spacing:1px">UPTIME</div>
+            </div>
+            <div class="panel" style="padding:12px;text-align:center">
+              <div style="font-family:'Orbitron',monospace;font-size:22px;color:#00d4ff;margin-bottom:4px">AES-256</div>
+              <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.35);letter-spacing:1px">ENCRYPTION</div>
+            </div>
+            <div class="panel" style="padding:12px;text-align:center">
+              <div style="font-family:'Orbitron',monospace;font-size:22px;color:#ffd700;margin-bottom:4px" id="sec-latency">12ms</div>
+              <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.35);letter-spacing:1px">RESPONSE</div>
+            </div>
+            <div class="panel" style="padding:12px;text-align:center">
+              <div style="font-family:'Orbitron',monospace;font-size:22px;color:#a855f7;margin-bottom:4px">JWT</div>
+              <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.35);letter-spacing:1px">AUTH TYPE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EARTH TAB ── -->
+    <div class="tab-panel" id="panel-earth" style="position:relative;overflow:hidden">
+      <canvas id="earth-canvas"></canvas>
+      <!-- Info overlays -->
+      <div class="earth-info" style="top:16px;left:16px">
+        <div style="font-family:'Orbitron',monospace;font-size:11px;color:#00ff88;letter-spacing:2px;margin-bottom:6px">🌍 GLOBAL INTELLIGENCE</div>
+        <div style="color:rgba(200,230,240,0.6);font-size:9px;line-height:1.7">
+          AI Nodes: <span style="color:#00d4ff">247</span><br>
+          Active Ops: <span style="color:#00ff88">12</span><br>
+          Coverage: <span style="color:#ffd700">Global</span>
+        </div>
+      </div>
+      <div class="earth-info" style="bottom:60px;left:16px;max-width:220px">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(0,212,255,0.5);letter-spacing:1px;margin-bottom:5px">WORLD DATA ACCESS</div>
+        <div style="color:rgba(200,230,240,0.5);font-size:9px;line-height:1.6">
+          Drag to rotate globe<br>Scroll to zoom in/out<br>JARVIS monitors globally
+        </div>
+      </div>
+      <div class="earth-info" style="top:16px;right:16px;text-align:right">
+        <div style="font-family:'Orbitron',monospace;font-size:11px;color:#00d4ff;letter-spacing:2px;margin-bottom:6px">NEURAL SHIELD</div>
+        <div style="color:rgba(200,230,240,0.6);font-size:9px;line-height:1.7">
+          Status: <span style="color:#00ff88">ACTIVE</span><br>
+          Satellites: <span style="color:#00d4ff">48</span><br>
+          Protection: <span style="color:#00ff88">100%</span>
+        </div>
+      </div>
+      <div class="earth-info" style="bottom:60px;right:16px;text-align:right">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(0,255,136,0.5);letter-spacing:1px;margin-bottom:5px">LIVE DATA STREAMS</div>
+        <div style="color:rgba(200,230,240,0.5);font-size:9px;line-height:1.6">
+          Markets: <span style="color:#ffd700">LIVE</span><br>
+          News: <span style="color:#00d4ff">LIVE</span><br>
+          Threats: <span style="color:#00ff88">MONITORING</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GOD MODE TAB ── -->
+    <div class="tab-panel" id="panel-godmode" style="overflow-y:auto">
+      <div style="max-width:780px;margin:0 auto;padding:22px;width:100%">
+        <div style="text-align:center;margin-bottom:22px">
+          <div style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:#ffd700;text-shadow:0 0 28px rgba(255,215,0,0.5);margin-bottom:4px;letter-spacing:4px">⚡ BUSINESS GOD MODE</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(200,230,240,0.35);letter-spacing:3px">MULTI-GENIUS STRATEGIC ANALYSIS</div>
+        </div>
+        <div class="panel" style="padding:18px;margin-bottom:16px">
+          <div class="slabel">Your Business Challenge</div>
+          <textarea class="inp" id="biz-input" rows="4" placeholder="Describe your business problem in detail..."></textarea>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn btn-gold" style="flex:1;font-size:12px" id="gm-btn" onclick="runGodMode()">⚡ ENGAGE GOD MODE</button>
+            <button class="btn btn-sm" onclick="resetGodMode()" style="font-size:10px">RESET</button>
+          </div>
+        </div>
+        <div id="gm-loading" style="display:none;text-align:center;padding:36px">
+          <div style="display:flex;justify-content:center;gap:8px;margin-bottom:10px">
+            <span class="ldot" style="background:#ffd700;box-shadow:0 0 9px #ffd700;animation-delay:0s"></span>
+            <span class="ldot" style="background:#ffd700;box-shadow:0 0 9px #ffd700;animation-delay:0.18s;margin:0 3px"></span>
+            <span class="ldot" style="background:#ffd700;box-shadow:0 0 9px #ffd700;animation-delay:0.36s"></span>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(255,215,0,0.7)">Channeling Musk · Bezos · Jobs · Buffett...</div>
+        </div>
+        <div id="gm-result"></div>
+      </div>
+    </div>
+
+    <!-- ── MEMORY TAB ── -->
+    <div class="tab-panel" id="panel-memory" style="overflow-y:auto">
+      <div style="max-width:700px;margin:0 auto;padding:18px;width:100%;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input class="inp" id="mem-search" placeholder="Search memory nodes..." style="flex:1;min-width:150px" oninput="renderMemory()">
+          <input class="inp" id="mem-new" placeholder="Add memory node..." style="width:200px" onkeydown="if(event.key==='Enter')addMemory()">
+          <button class="btn btn-sm" onclick="addMemory()">+ ADD</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,212,255,0.5);letter-spacing:2px" id="mem-count">MEMORY ENGINE — 0 NODES</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap" id="mem-tag-btns"></div>
+        </div>
+        <div id="mem-list" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- FOOTER -->
+  <footer>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div style="display:flex;gap:5px;align-items:center"><span class="dot" style="width:5px;height:5px;background:#00ff88;box-shadow:0 0 5px #00ff88"></span><span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.35)">CORE: <span style="color:#00ff88">ONLINE</span></span></div>
+      <div style="display:flex;gap:5px;align-items:center"><span class="dot" style="width:5px;height:5px"></span><span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.35)">SHIELD: <span style="color:#00ff88">ACTIVE</span></span></div>
+      <div style="display:flex;gap:5px;align-items:center"><span class="dot" style="width:5px;height:5px;background:#a855f7;box-shadow:0 0 5px #a855f7"></span><span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.35)">MIND LAB: <span style="color:#a855f7" id="footer-ml">READY</span></span></div>
+      <div style="display:flex;gap:5px;align-items:center"><span class="dot" style="width:5px;height:5px;background:#ffd700;box-shadow:0 0 5px #ffd700"></span><span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.35)">AGENTS: <span style="color:#ffd700">33 LIVE</span></span></div>
+    </div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(0,212,255,0.25);letter-spacing:1px">JARVIS OS + MIND LAB v5.0 · POWERED BY CLAUDE AI</div>
+  </footer>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// JARVIS OS + MIND LAB — Complete JavaScript System
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+const AGENTS = [
+  {id:'ceo',name:'CEO',icon:'◈',color:'#00d4ff',desc:'Strategic leadership & vision',personality:'Think like Elon Musk — first principles, bold bets, 10x thinking. You are CEO AI within JARVIS OS.'},
+  {id:'marketing',name:'Marketing',icon:'◉',color:'#ff6b35',desc:'Brand & growth hacking',personality:'Growth hacker meets brand architect. You are Marketing AI within JARVIS OS.'},
+  {id:'sales',name:'Sales',icon:'◎',color:'#00ff88',desc:'Revenue & partnerships',personality:'Challenger sale methodology, close with empathy. You are Sales AI within JARVIS OS.'},
+  {id:'finance',name:'Finance',icon:'◇',color:'#ffd700',desc:'Capital & financial strategy',personality:"Buffett's patience meets Dalio's risk. You are Finance AI within JARVIS OS."},
+  {id:'ops',name:'Operations',icon:'◆',color:'#a855f7',desc:'Systems & execution',personality:'Kaizen mindset, eliminate waste. You are Operations AI within JARVIS OS.'},
+  {id:'research',name:'Research',icon:'⬡',color:'#00bfff',desc:'Intelligence & deep insights',personality:'First-principles synthesis, deep research. You are Research AI within JARVIS OS.'},
+  {id:'social',name:'Social Media',icon:'◌',color:'#ff4f9a',desc:'Content & community',personality:'Viral hooks, algorithmic mastery. You are Social Media AI within JARVIS OS.'},
+  {id:'product',name:'Product',icon:'⬢',color:'#ff9500',desc:'Development & roadmap',personality:"Jobs-level product intuition. You are Product AI within JARVIS OS."},
+];
+
+const SECURITY_AGENTS = [
+  {id:'firewall',name:'Firewall AI',icon:'🔥',color:'#ff4f6b',desc:'Network perimeter defense',status:'active'},
+  {id:'threat',name:'Threat Detection',icon:'👁',color:'#ff9500',desc:'Anomaly & threat analysis',status:'active'},
+  {id:'malware',name:'Malware Defense',icon:'🛡',color:'#ff6b35',desc:'Malware & virus protection',status:'active'},
+  {id:'encrypt',name:'Data Encryption',icon:'🔐',color:'#ffd700',desc:'AES-256 data protection',status:'active'},
+  {id:'auth',name:'Authentication AI',icon:'🔑',color:'#00d4ff',desc:'Identity & access control',status:'active'},
+  {id:'intrusion',name:'Intrusion Detection',icon:'⚠',color:'#ff4f9a',desc:'Real-time breach detection',status:'active'},
+  {id:'behavior',name:'Behavior Monitor',icon:'📊',color:'#a855f7',desc:'AI behavior analysis',status:'active'},
+  {id:'neural',name:'Neural Shield AI',icon:'⚡',color:'#00ff88',desc:'Neural protection layer',status:'active'},
+  {id:'network',name:'Network Security',icon:'🌐',color:'#00bfff',desc:'Network traffic analysis',status:'active'},
+  {id:'lockdown',name:'Emergency Lockdown',icon:'🔒',color:'#ff4f6b',desc:'Emergency system lock',status:'standby'},
+];
+
+const RESEARCH_AGENTS = [
+  {id:'knowledge',name:'Knowledge AI',color:'#a855f7',icon:'◈'},{id:'deepres',name:'Deep Research',color:'#00bfff',icon:'◉'},
+  {id:'auto',name:'Automation AI',color:'#00ff88',icon:'◎'},{id:'dataint',name:'Data Intelligence',color:'#ffd700',icon:'◇'},
+  {id:'evolution',name:'AI Evolution',color:'#ff4f9a',icon:'◆'},{id:'vision',name:'Vision AI',color:'#ff9500',icon:'⬡'},
+  {id:'strategy',name:'Strategy AI',color:'#00d4ff',icon:'⬢'},{id:'sysopt',name:'System Optimization',color:'#ff6b35',icon:'◌'},
+  {id:'memarch',name:'Memory Architect',color:'#a855f7',icon:'◈'},{id:'learning',name:'Learning AI',color:'#00bfff',icon:'◉'},
+  {id:'prompt',name:'Prompt Engineer',color:'#00ff88',icon:'◎'},{id:'workflow',name:'Workflow AI',color:'#ffd700',icon:'◇'},
+  {id:'analytics',name:'Analytics AI',color:'#ff4f9a',icon:'◆'},{id:'trend',name:'Trend Prediction',color:'#ff9500',icon:'⬡'},
+  {id:'multi',name:'Multimodal AI',color:'#00d4ff',icon:'⬢'},
+];
+
+const THINKING_STYLES = [
+  {name:'Elon',key:'elon',style:'First principles · 10x thinking',color:'#00d4ff'},
+  {name:'Bezos',key:'bezos',style:'Customer obsession · Day 1',color:'#ff9500'},
+  {name:'Jobs',key:'jobs',style:'Ruthless simplicity · Craft',color:'#e0e0e0'},
+  {name:'Buffett',key:'buffett',style:'Moats · Compounding',color:'#ffd700'},
+];
+
+const PROJECTS = [
+  {id:'diamond',name:'USA Diamond Project',status:'active',color:'#00d4ff',tasks:['Market validation','Competitor analysis','MVP scoping','Investor deck'],notes:'Premium B2B SaaS targeting Fortune 500.',goals:'Reach $1M ARR in 12 months.',progress:35,mpin:'1234'},
+  {id:'dazzler',name:'Dazzler Diam & Jewels',status:'active',color:'#ffd700',tasks:['Brand identity','Product catalog','Social strategy','Email list'],notes:'Luxury jewelry brand for global market.',goals:'$500K revenue in 6 months.',progress:20,mpin:'5678'},
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let chatHistory=[], memories=[], trainingData=[], selectedProject=null, selectedAgent=null, agentHistory=[], agentThinking=false, isThinking=false, micActive=false, memFilter='', threats=0, secBlocked=0, earthGlobe=null, earthInit=false, mpinBuffer='', mpinTarget=null, voiceRecognition=null;
+
+// ─── CLOCK ────────────────────────────────────────────────────────────────────
+function updateClock(){const d=new Date();document.getElementById('clock').textContent=d.toLocaleTimeString('en-US',{hour12:false});document.getElementById('clock-date').textContent=d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});document.getElementById('init-time').textContent=d.toLocaleTimeString('en-US',{hour12:false})}
+setInterval(updateClock,1000);updateClock();
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-'+t.dataset.tab).classList.add('active');
+    if(t.dataset.tab==='earth'&&!earthInit) initEarth();
+    if(t.dataset.tab==='security') renderSecurityAgents();
+    if(t.dataset.tab==='mindlab'){renderResearchAgents();renderTraining();}
+  });
+});
+
+// ─── CLAUDE API ───────────────────────────────────────────────────────────────
+async function callClaude(messages,system){
+  const sys=system||`You are JARVIS — an elite AI assistant with MIND LAB neural training. You are brilliant, precise, and subtly witty. You have access to the user's projects, memories, and training data. Speak with confidence. Address the user as "Sir" occasionally. Use → for actions, ◆ for insights. Be direct and powerful.`;
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages})});
+  const d=await r.json();return d.content?.map(b=>b.text||'').join('')||'Neural pathway error. Retry.';
+}
+
+// ─── HEART CORE ───────────────────────────────────────────────────────────────
+let heartAnim,heartTime=0,particles=[];
+function initParticles(){particles=Array.from({length:40},(_,i)=>({angle:(i/40)*Math.PI*2,radius:48+Math.random()*20,speed:0.002+Math.random()*0.003,size:1+Math.random()*2,opacity:0.3+Math.random()*0.7}))}
+function drawHeart(){
+  const canvas=document.getElementById('heart-canvas');if(!canvas)return;
+  const ctx=canvas.getContext('2d');const W=175,H=175,cx=W/2,cy=H/2;
+  heartTime+=0.016;const t=heartTime;
+  const beat=isThinking?1+Math.sin(t*9)*0.11:1+Math.sin(t*1.4)*0.04;
+  ctx.clearRect(0,0,W,H);
+  [75,60,46].forEach((r,i)=>{ctx.beginPath();ctx.arc(cx,cy,r*beat,0,Math.PI*2);ctx.strokeStyle=`rgba(0,212,255,${0.055-i*0.015})`;ctx.lineWidth=1;ctx.stroke()});
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(t*0.5);
+  for(let i=0;i<22;i++){const a=(i/22)*Math.PI*2;ctx.beginPath();ctx.arc(Math.cos(a)*68,Math.sin(a)*68,1.4,0,Math.PI*2);ctx.fillStyle=`rgba(0,212,255,${i%3===0?0.8:0.2})`;ctx.fill()}ctx.restore();
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(-t*0.3);
+  for(let i=0;i<14;i++){const a=(i/14)*Math.PI*2;const len=i%4===0?7:3;ctx.beginPath();ctx.moveTo(Math.cos(a)*76,Math.sin(a)*76);ctx.lineTo(Math.cos(a)*(76+len),Math.sin(a)*(76+len));ctx.strokeStyle=`rgba(0,212,255,${i%4===0?0.6:0.2})`;ctx.lineWidth=1.5;ctx.stroke()}ctx.restore();
+  const pts=particles.map(p=>({x:cx+Math.cos(p.angle+t*p.speed)*p.radius,y:cy+Math.sin(p.angle+t*p.speed)*p.radius,...p}));
+  pts.forEach((p,i)=>{pts.slice(i+1).forEach(q=>{const d=Math.hypot(p.x-q.x,p.y-q.y);if(d<32){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle=`rgba(0,212,255,${(1-d/32)*0.18})`;ctx.lineWidth=0.5;ctx.stroke()}})});
+  pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fillStyle=`rgba(0,212,255,${p.opacity*beat})`;ctx.fill()});
+  const cA=isThinking?0.6+Math.sin(t*13)*0.3:0.45+Math.sin(t*2)*0.12;
+  const g=ctx.createRadialGradient(cx,cy,0,cx,cy,37*beat);
+  g.addColorStop(0,`rgba(0,212,255,${cA})`);g.addColorStop(0.4,`rgba(0,180,220,${cA*0.5})`);g.addColorStop(1,'rgba(0,212,255,0)');
+  ctx.beginPath();ctx.arc(cx,cy,37*beat,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(t*0.42);ctx.beginPath();
+  for(let i=0;i<6;i++){const a=(i/6)*Math.PI*2-Math.PI/6;const r=16*beat;i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}
+  ctx.closePath();ctx.strokeStyle='rgba(0,212,255,0.9)';ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle='rgba(0,212,255,0.14)';ctx.fill();ctx.restore();
+  if(isThinking){const pr=(t*75)%75;ctx.beginPath();ctx.arc(cx,cy,pr,0,Math.PI*2);ctx.strokeStyle=`rgba(255,215,0,${Math.max(0,1-pr/75)*0.5})`;ctx.lineWidth=1;ctx.stroke()}
+  heartAnim=requestAnimationFrame(drawHeart)
+}
+function setHeartState(s){const dot=document.getElementById('core-dot'),lbl=document.getElementById('core-status');const map={thinking:['#ffd700','PROCESSING'],speaking:['#00ff88','RESPONDING'],listening:['#ff4f9a','LISTENING'],standby:['#00d4ff','STANDBY']};const[c,l]=map[s]||map.standby;dot.style.background=c;dot.style.boxShadow=`0 0 7px ${c}`;lbl.textContent=l;lbl.style.color=c+'99'}
+initParticles();drawHeart();
+
+// ─── CHAT ─────────────────────────────────────────────────────────────────────
+function appendMsg(role,content){
+  const area=document.getElementById('chat-area');
+  const wrap=document.createElement('div');wrap.className=role==='assistant'?'msg-wrap-j':'msg-wrap-u';
+  const sender=document.createElement('div');sender.className='msg-sender';sender.textContent=role==='assistant'?'◈ JARVIS + MIND LAB':'YOU';
+  const bubble=document.createElement('div');bubble.className=role==='assistant'?'msg-j':'msg-u';bubble.textContent=content;
+  wrap.appendChild(sender);wrap.appendChild(bubble);area.appendChild(wrap);area.scrollTop=area.scrollHeight;
+  document.getElementById('stat-msgs').textContent=area.querySelectorAll('.msg-j,.msg-u').length;
+}
+function showThinking(){const area=document.getElementById('chat-area');const div=document.createElement('div');div.id='think-ind';div.className='msg-wrap-j';div.innerHTML=`<div class="msg-sender">◈ JARVIS</div><div class="msg-j" style="display:flex;align-items:center;gap:8px"><span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#ffd700">PROCESSING</span><span class="ldot" style="background:#ffd700;box-shadow:0 0 6px #ffd700;animation-delay:0s"></span><span class="ldot" style="background:#ffd700;box-shadow:0 0 6px #ffd700;animation-delay:0.2s;margin:0 3px"></span><span class="ldot" style="background:#ffd700;box-shadow:0 0 6px #ffd700;animation-delay:0.4s"></span></div>`;area.appendChild(div);area.scrollTop=area.scrollHeight}
+function hideThinking(){document.getElementById('think-ind')?.remove()}
+async function sendMessage(){
+  const inp=document.getElementById('chat-input');const txt=inp.value.trim();if(!txt||isThinking)return;
+  inp.value='';isThinking=true;document.getElementById('send-btn').disabled=true;
+  appendMsg('user',txt);chatHistory.push({role:'user',content:txt});
+  const tags=['project','task','goal','vision','idea','research'];
+  const tag=tags.find(t=>txt.toLowerCase().includes(t))||'conversation';
+  if(txt.length>20){memories.unshift({id:Date.now(),text:txt.slice(0,150),tag,ts:Date.now()});updateStats();renderMemory()}
+  setHeartState('thinking');showThinking();
+  const trainingCtx=trainingData.slice(0,5).map(t=>`[${t.type}]: ${t.content}`).join('\n');
+  const sys=`You are JARVIS v5.0 with MIND LAB neural training. You have access to: ${trainingCtx||'No training data yet'}. Be intelligent, direct, and powerful. Use → for actions, ◆ for insights.`;
+  try{
+    const reply=await callClaude(chatHistory.map(m=>({role:m.role,content:m.content})),sys);
+    hideThinking();chatHistory.push({role:'assistant',content:reply});appendMsg('assistant',reply);setHeartState('speaking');setTimeout(()=>setHeartState('standby'),2200);
+  }catch(e){hideThinking();appendMsg('assistant','Neural pathway error. Check API configuration and retry, Sir.');setHeartState('standby')}
+  isThinking=false;document.getElementById('send-btn').disabled=false;
+}
+document.getElementById('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}});
+function clearChat(){chatHistory=[];document.getElementById('chat-area').innerHTML='';appendMsg('assistant','Memory cleared. Ready for new session, Sir.');}
+
+// ─── MIC ──────────────────────────────────────────────────────────────────────
+function toggleMic(){
+  micActive=!micActive;const btn=document.getElementById('mic-btn');const bars=document.querySelectorAll('.wave-bar');
+  if(micActive){btn.textContent='● RECORDING';btn.classList.add('active');bars.forEach(b=>b.classList.add('on'));setHeartState('listening')}
+  else{btn.textContent='🎤 MIC OFF';btn.classList.remove('active');bars.forEach(b=>b.classList.remove('on'));setHeartState('standby')}
+}
+
+// ─── VOICE OVERLAY ────────────────────────────────────────────────────────────
+function openVoice(){
+  document.getElementById('voice-overlay').classList.add('show');
+  if(!('SpeechRecognition' in window||'webkitSpeechRecognition' in window)){document.getElementById('voice-live').textContent='Speech recognition not supported. Type below.';return}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  voiceRecognition=new SR();voiceRecognition.continuous=true;voiceRecognition.interimResults=true;voiceRecognition.lang='en-US';
+  voiceRecognition.onresult=e=>{const t=Array.from(e.results).map(r=>r[0].transcript).join('');document.getElementById('voice-live').textContent=t;document.getElementById('voice-edit').value=t};
+  voiceRecognition.onerror=()=>document.getElementById('voice-status').textContent='ERROR — RETRY';
+  voiceRecognition.start();document.getElementById('voice-status').textContent='LISTENING...';
+}
+function closeVoice(){document.getElementById('voice-overlay').classList.remove('show');voiceRecognition?.stop()}
+function clearVoice(){document.getElementById('voice-live').textContent='Waiting for speech...';document.getElementById('voice-edit').value=''}
+function confirmVoiceCommand(){
+  const cmd=document.getElementById('voice-edit').value.trim();if(!cmd)return;
+  closeVoice();document.getElementById('chat-input').value=cmd;sendMessage();
+}
+
+// ─── PROJECTS ─────────────────────────────────────────────────────────────────
+function renderProjects(){
+  const list=document.getElementById('proj-list');list.innerHTML='';
+  PROJECTS.forEach(p=>{
+    const div=document.createElement('div');div.className='proj-card panel'+(selectedProject?.id===p.id?' sel':'');
+    div.style.borderColor=selectedProject?.id===p.id?p.color+'50':undefined;
+    div.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px"><span style="font-weight:700;font-size:12px;color:${p.color}">${p.name}</span><span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:${p.status==='active'?'#00ff88':'#ffd700'};border:1px solid ${p.status==='active'?'#00ff8840':'#ffd70040'};padding:1px 5px;border-radius:1px">${p.status.toUpperCase()}</span></div><div class="prog-track"><div class="prog-fill" style="width:${p.progress}%;background:linear-gradient(90deg,${p.color},${p.color}80);box-shadow:0 0 7px ${p.color}"></div></div><div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.35);margin-top:3px">${p.progress}% complete</div>`;
+    div.onclick=()=>{
+      if(p.mpin){openMpin(p)}else{selectedProject=p;renderProjects();renderProjectDetail()}
+    };list.appendChild(div);
+  });
+}
+function openMpin(proj){
+  mpinBuffer='';mpinTarget=proj;document.getElementById('mpin-proj-name').textContent=proj.name.toUpperCase();updateMpinDisplay();
+  const numpad=document.getElementById('mpin-numpad');numpad.innerHTML='';
+  for(let i=1;i<=9;i++){const b=document.createElement('button');b.className='mpin-key';b.textContent=i;b.onclick=()=>mpinPress(String(i));numpad.appendChild(b)}
+  const empty=document.createElement('div');numpad.appendChild(empty);
+  const zero=document.createElement('button');zero.className='mpin-key';zero.textContent='0';zero.onclick=()=>mpinPress('0');numpad.appendChild(zero);
+  const del=document.createElement('button');del.className='mpin-key';del.textContent='⌫';del.style.fontSize='14px';del.onclick=()=>{mpinBuffer=mpinBuffer.slice(0,-1);updateMpinDisplay()};numpad.appendChild(del);
+  document.getElementById('mpin-error').textContent='';document.getElementById('mpin-modal').classList.add('show');
+}
+function mpinPress(d){if(mpinBuffer.length>=4)return;mpinBuffer+=d;updateMpinDisplay();if(mpinBuffer.length===4)setTimeout(checkMpin,200)}
+function updateMpinDisplay(){for(let i=0;i<4;i++){const el=document.getElementById(`md${i}`);if(i<mpinBuffer.length){el.textContent='●';el.classList.add('filled')}else{el.textContent='_';el.classList.remove('filled')}}}
+function checkMpin(){if(mpinBuffer===mpinTarget.mpin){closeMpin();selectedProject=mpinTarget;renderProjects();renderProjectDetail()}else{document.getElementById('mpin-error').textContent='⚠ INCORRECT MPIN';mpinBuffer='';setTimeout(()=>{updateMpinDisplay();document.getElementById('mpin-error').textContent=''},1200)}}
+function closeMpin(){document.getElementById('mpin-modal').classList.remove('show');mpinBuffer='';mpinTarget=null}
+function renderProjectDetail(){
+  const el=document.getElementById('proj-detail');if(!selectedProject){el.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(200,230,240,0.2);flex-direction:column;gap:10px"><div style="font-family:Orbitron,monospace;font-size:26px">◈</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;letter-spacing:2px">SELECT A PROJECT</div></div>';return}
+  const p=selectedProject;
+  el.innerHTML=`<div style="animation:fadeUp 0.3s ease">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+    <div style="width:3px;height:30px;background:${p.color};box-shadow:0 0 10px ${p.color};border-radius:1px"></div>
+    <div><div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:${p.color}">${p.name}</div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(200,230,240,0.35);letter-spacing:1px;margin-top:2px">PROJECT WORKSPACE · MPIN SECURED</div></div>
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <button class="btn btn-sm" onclick="generateProjectReport()" style="font-size:9px;color:${p.color};border-color:${p.color}40">◆ AI REPORT</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="panel" style="padding:14px">
+      <div class="slabel">Tasks</div>
+      <div id="task-list" style="display:flex;flex-direction:column;gap:7px">
+        ${p.tasks.map((t,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(0,212,255,0.05)"><div style="width:13px;height:13px;border:1px solid ${p.color}60;border-radius:1px;cursor:pointer;flex-shrink:0" onclick="completeTask(${i})"></div><span style="font-size:12px;color:rgba(200,230,240,0.75)">${t}</span></div>`).join('')}
+      </div>
+      <button class="btn btn-sm" style="margin-top:9px;width:100%;font-size:9px" onclick="addTask()">+ ADD TASK</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="panel" style="padding:14px"><div class="slabel">Notes</div><p style="font-size:12px;color:rgba(200,230,240,0.65);line-height:1.6">${p.notes}</p></div>
+      <div class="panel" style="padding:14px"><div class="slabel">Primary Goal</div><p style="font-size:13px;color:${p.color};line-height:1.5;font-weight:600">${p.goals}</p></div>
+      <div class="panel" style="padding:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="slabel" style="margin:0">Progress</div><span style="font-family:'Orbitron',monospace;font-size:15px;color:${p.color}">${p.progress}%</span></div>
+        <div class="prog-track" style="margin-bottom:8px"><div class="prog-fill" style="width:${p.progress}%;background:linear-gradient(90deg,${p.color},${p.color}80);box-shadow:0 0 7px ${p.color}"></div></div>
+        <input type="range" min="0" max="100" value="${p.progress}" style="width:100%;accent-color:${p.color}" oninput="updateProgress(this.value)">
+      </div>
+      <div class="panel" style="padding:14px"><div class="slabel">Connected Platforms</div><div style="display:flex;gap:5px;flex-wrap:wrap"><span style="font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 6px;border:1px solid rgba(0,212,255,0.2);border-radius:1px;color:rgba(0,212,255,0.5)">Gmail ✓</span><span style="font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 6px;border:1px solid rgba(255,79,107,0.2);border-radius:1px;color:rgba(255,79,107,0.5)">Calendar ✓</span><span style="font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 6px;border:1px solid rgba(168,85,247,0.2);border-radius:1px;color:rgba(168,85,247,0.5)">Social ✓</span></div></div>
+    </div>
+  </div>
+  <div id="proj-report" style="margin-top:14px"></div>
+</div>`}
+async function generateProjectReport(){
+  const p=selectedProject;if(!p)return;
+  const rpt=document.getElementById('proj-report');rpt.innerHTML=`<div class="panel" style="padding:14px;display:flex;align-items:center;gap:8px"><span class="ldot" style="background:${p.color};box-shadow:0 0 6px ${p.color}"></span><span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:${p.color}">Generating AI report...</span></div>`;
+  try{const r=await callClaude([{role:'user',content:`Generate a concise project status report for: ${p.name}. Tasks: ${p.tasks.join(', ')}. Notes: ${p.notes}. Goal: ${p.goals}. Progress: ${p.progress}%. Format with sections: Status, Wins, Blockers, Next Actions.`}]);
+  rpt.innerHTML=`<div class="panel" style="padding:16px;border-left:3px solid ${p.color};background:${p.color}04"><div style="font-family:'Orbitron',monospace;font-size:11px;color:${p.color};margin-bottom:10px">◆ AI PROJECT REPORT</div><div style="font-size:12px;line-height:1.7;color:rgba(200,230,240,0.8);white-space:pre-wrap">${r}</div></div>`}
+  catch{rpt.innerHTML=`<div class="panel" style="padding:12px;border-left:3px solid #ff4f6b"><span style="font-size:11px;color:#ff4f6b">Report failed. Check API.</span></div>`}
+}
+function addProject(){const n=prompt('Project name:');if(!n)return;PROJECTS.push({id:Date.now(),name:n,status:'planning',color:'#a855f7',tasks:[],notes:'',goals:'',progress:0,mpin:''});renderProjects();updateStats()}
+function addTask(){const t=prompt('New task:');if(!t||!selectedProject)return;selectedProject.tasks.push(t);renderProjectDetail()}
+function completeTask(i){if(!selectedProject)return;selectedProject.tasks.splice(i,1);renderProjectDetail()}
+function updateProgress(v){if(!selectedProject)return;selectedProject.progress=parseInt(v);renderProjects()}
+renderProjects();
+
+// ─── AGENTS ───────────────────────────────────────────────────────────────────
+function renderAgentList(){
+  const list=document.getElementById('agent-list');list.innerHTML='';
+  AGENTS.forEach(a=>{
+    const div=document.createElement('div');div.className='agent-card'+(selectedAgent?.id===a.id?' sel':'');
+    if(selectedAgent?.id===a.id)div.style.borderColor=a.color+'50';
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:9px"><span style="font-size:17px;color:${a.color}">${a.icon}</span><div><div style="font-weight:700;font-size:12px;color:${a.color};line-height:1">${a.name} AI</div><div style="font-size:10px;color:rgba(200,230,240,0.35);margin-top:2px">${a.desc}</div></div></div>`;
+    div.onclick=()=>{selectedAgent=a;agentHistory=[];renderAgentList();renderAgentUI()};list.appendChild(div);
+  });
+}
+function renderAgentUI(){
+  const right=document.getElementById('agent-right');if(!selectedAgent){right.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(200,230,240,0.2);flex-direction:column;gap:10px"><div style="font-family:Orbitron,monospace;font-size:26px">◈◉◎</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;letter-spacing:2px">SELECT AN AGENT</div></div>';return}
+  const a=selectedAgent;
+  right.innerHTML=`<div style="padding:11px 18px;border-bottom:1px solid rgba(0,212,255,0.07);background:rgba(0,0,0,0.3);display:flex;align-items:center;gap:11px;flex-shrink:0"><span style="font-size:22px;color:${a.color};filter:drop-shadow(0 0 7px ${a.color})">${a.icon}</span><div><div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:${a.color}">${a.name.toUpperCase()} AI</div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(200,230,240,0.35)">${a.desc}</div></div><div style="margin-left:auto;display:flex;align-items:center;gap:5px"><span style="width:5px;height:5px;border-radius:50%;background:${a.color};box-shadow:0 0 6px ${a.color};display:inline-block"></span><span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:${a.color}">ONLINE</span><button class="btn btn-sm" onclick="clearAgentChat()" style="margin-left:8px;font-size:8px;opacity:0.5">CLEAR</button></div></div>
+  <div id="agent-chat" class="chat-area"><div style="text-align:center;padding:32px;color:rgba(200,230,240,0.25)"><div style="font-size:28px;color:${a.color+'40'};margin-bottom:6px">${a.icon}</div><div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px">AGENT READY</div><div style="font-size:12px;margin-top:6px;opacity:0.7">${a.desc}</div></div></div>
+  <div class="chat-footer"><input class="inp" id="agent-input" placeholder="Brief ${a.name} AI..." style="flex:1"><button class="btn" id="agent-send" style="border-color:${a.color}50;color:${a.color}" onclick="sendAgentMessage()">SEND</button></div>`;
+  document.getElementById('agent-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sendAgentMessage()}});
+}
+function appendAgentMsg(role,content){
+  const a=selectedAgent;const area=document.getElementById('agent-chat');if(!area)return;
+  const wrap=document.createElement('div');wrap.className=role==='assistant'?'msg-wrap-j':'msg-wrap-u';
+  const sender=document.createElement('div');sender.className='msg-sender';sender.textContent=role==='assistant'?`◈ ${a.name.toUpperCase()} AI`:'YOU';
+  const bubble=document.createElement('div');
+  bubble.style.cssText=`background:${role==='assistant'?a.color+'07':'rgba(168,85,247,0.05)'};border:1px solid ${role==='assistant'?a.color+'22':'rgba(168,85,247,0.14)'};border-${role==='assistant'?'left':'right'}:2px solid ${role==='assistant'?a.color:'#a855f7'};padding:9px 13px;border-radius:${role==='assistant'?'0 4px 4px 0':'4px 0 0 4px'};font-size:13px;line-height:1.6;white-space:pre-wrap;animation:fadeUp 0.3s ease;max-width:490px;text-align:${role==='user'?'right':'left'}`;
+  bubble.textContent=content;wrap.appendChild(sender);wrap.appendChild(bubble);area.appendChild(wrap);area.scrollTop=area.scrollHeight;
+}
+async function sendAgentMessage(){
+  const inp=document.getElementById('agent-input');if(!inp||!selectedAgent||agentThinking)return;
+  const txt=inp.value.trim();if(!txt)return;inp.value='';agentThinking=true;document.getElementById('agent-send').disabled=true;
+  appendAgentMsg('user',txt);agentHistory.push({role:'user',content:txt});
+  const area=document.getElementById('agent-chat');
+  const loadDiv=document.createElement('div');loadDiv.id='agent-loading';loadDiv.className='msg-wrap-j';
+  loadDiv.innerHTML=`<div class="msg-sender">◈ ${selectedAgent.name.toUpperCase()} AI</div><div style="background:${selectedAgent.color}07;border:1px solid ${selectedAgent.color}22;border-left:2px solid ${selectedAgent.color};padding:7px 13px;display:flex;align-items:center;gap:7px"><span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:${selectedAgent.color}">ANALYZING</span><span class="ldot" style="background:${selectedAgent.color};box-shadow:0 0 5px ${selectedAgent.color};animation-delay:0s"></span><span class="ldot" style="background:${selectedAgent.color};box-shadow:0 0 5px ${selectedAgent.color};animation-delay:0.2s;margin:0 3px"></span><span class="ldot" style="background:${selectedAgent.color};box-shadow:0 0 5px ${selectedAgent.color};animation-delay:0.4s"></span></div>`;
+  area.appendChild(loadDiv);area.scrollTop=area.scrollHeight;
+  try{const a=selectedAgent;const sys=`You are the ${a.name} AI Agent within JARVIS OS + MIND LAB. ${a.personality} Specialization: ${a.desc}. Be highly tactical and results-oriented. Use → for actions.`;const reply=await callClaude(agentHistory.map(m=>({role:m.role,content:m.content})),sys);document.getElementById('agent-loading')?.remove();agentHistory.push({role:'assistant',content:reply});appendAgentMsg('assistant',reply)}
+  catch{document.getElementById('agent-loading')?.remove();appendAgentMsg('assistant','Connection error. Reconnecting...')}
+  agentThinking=false;const sb=document.getElementById('agent-send');if(sb)sb.disabled=false;
+}
+function clearAgentChat(){agentHistory=[];const area=document.getElementById('agent-chat');if(area)area.innerHTML=''}
+renderAgentList();
+
+// ─── SECURITY SYSTEM ─────────────────────────────────────────────────────────
+function renderSecurityAgents(){
+  const grid=document.getElementById('sec-agents-grid');if(!grid)return;grid.innerHTML='';
+  SECURITY_AGENTS.forEach(a=>{
+    const div=document.createElement('div');div.className=`sec-agent${a.status==='active'?' active':''}`;
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><span style="font-size:15px">${a.icon}</span><div><div style="font-size:12px;font-weight:600;color:${a.status==='active'?a.color:'rgba(200,230,240,0.5)'};">${a.name}</div><div style="font-size:10px;color:rgba(200,230,240,0.35)">${a.desc}</div></div><span style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:8px;padding:1px 5px;border:1px solid;border-radius:1px;color:${a.status==='active'?'#00ff88':'#ffd700'};border-color:${a.status==='active'?'#00ff8840':'#ffd70040'}">${a.status.toUpperCase()}</span></div>`;
+    grid.appendChild(div);
+  });
+}
+function addThreatLog(msg,level='info'){
+  const log=document.getElementById('threat-log');if(!log)return;
+  const colors={threat:'#ff4f6b',warning:'#ffd700',info:'#00d4ff',clear:'#00ff88'};
+  const div=document.createElement('div');div.className='threat-item';div.style.borderLeftColor=(colors[level]||'#00d4ff')+'80';
+  const t=new Date().toLocaleTimeString('en-US',{hour12:false});
+  div.innerHTML=`<div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:${colors[level]||'#00d4ff'}">${msg.toUpperCase()}</div><div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.25);margin-top:2px">${t}</div>`;
+  log.insertBefore(div,log.firstChild);
+}
+async function runSecurityScan(){
+  addThreatLog('Initiating full security scan...','info');renderSecurityAgents();
+  await new Promise(r=>setTimeout(r,1500));
+  addThreatLog('System scan complete — no threats detected','clear');
+  document.getElementById('sec-latency').textContent=Math.floor(8+Math.random()*15)+'ms';
+}
+function emergencyLockdown(){
+  const el=document.getElementById('hdr-shield');el.textContent='LOCKDOWN';el.style.color='#ff4f6b';
+  addThreatLog('⚠ EMERGENCY LOCKDOWN ACTIVATED','threat');
+  document.getElementById('shield-status').textContent='LOCKDOWN';document.getElementById('shield-dot').style.background='#ff4f6b';
+  setTimeout(()=>{el.textContent='ACTIVE';el.style.color='#00ff88';document.getElementById('shield-status').textContent='ACTIVE';document.getElementById('shield-dot').style.background='#00ff88';addThreatLog('Lockdown lifted — systems restored','clear')},3000);
+}
+
+// ─── MIND LAB SYSTEM ─────────────────────────────────────────────────────────
+function renderResearchAgents(){
+  const grid=document.getElementById('research-agents-grid');if(!grid)return;grid.parentElement.innerHTML='<div class="slabel slabel-purple">Mind Lab Research Agents (15)</div><div id="research-agents-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:7px"></div>';
+  const newGrid=document.getElementById('research-agents-grid');
+  RESEARCH_AGENTS.forEach(a=>{
+    const div=document.createElement('div');div.style.cssText=`padding:8px 10px;border:1px solid ${a.color}20;border-radius:2px;background:${a.color}05;cursor:pointer;transition:all 0.2s`;
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="font-size:13px;color:${a.color}">${a.icon}</span><span style="font-size:11px;font-weight:600;color:${a.color}">${a.name}</span></div><div style="font-family:'Share Tech Mono',monospace;font-size:7px;color:rgba(200,230,240,0.3);letter-spacing:0.5px">MIND LAB</div>`;
+    div.onmouseover=()=>div.style.background=a.color+'12';div.onmouseout=()=>div.style.background=a.color+'05';
+    div.onclick=()=>useResearchAgent(a);newGrid.appendChild(div);
+  });
+}
+async function useResearchAgent(a){
+  const q=prompt(`${a.name}: What should I research?`);if(!q)return;
+  document.querySelector('[data-tab="assistant"]').click();
+  document.getElementById('chat-input').value=`[${a.name}] ${q}`;sendMessage();
+}
+function addTrainingData(){
+  const txt=document.getElementById('ml-text').value.trim();const tag=document.getElementById('ml-tag').value;if(!txt)return;
+  trainingData.unshift({id:Date.now(),content:txt,type:tag,ts:Date.now(),source:'manual'});
+  document.getElementById('ml-text').value='';renderTraining();updateMLCount();
+}
+async function learnFromUrl(){
+  const url=document.getElementById('ml-url').value.trim();const ctx=document.getElementById('ml-url-context').value.trim();
+  if(!url)return;
+  trainingData.unshift({id:Date.now(),content:`URL: ${url}\nContext: ${ctx||'General learning from this URL'}`,type:'knowledge',ts:Date.now(),source:'url',url});
+  document.getElementById('ml-url').value='';document.getElementById('ml-url-context').value='';
+  renderTraining();updateMLCount();
+}
+function handleFileUpload(e){Array.from(e.target.files).forEach(f=>processFile(f))}
+function handleFileDrop(e){e.preventDefault();document.getElementById('upload-zone').classList.remove('drag');Array.from(e.dataTransfer.files).forEach(f=>processFile(f))}
+function processFile(f){
+  const list=document.getElementById('upload-list');
+  const item=document.createElement('div');item.style.cssText='display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid rgba(168,85,247,0.15);border-radius:2px;background:rgba(168,85,247,0.03)';
+  const icon={'pdf':'📄','doc':'📝','docx':'📝','csv':'📊','txt':'📋','png':'🖼','jpg':'🖼','mp4':'🎥','json':'⚡'}[f.name.split('.').pop().toLowerCase()]||'📁';
+  item.innerHTML=`<span style="font-size:16px">${icon}</span><div style="flex:1"><div style="font-size:12px;color:rgba(200,230,240,0.75)">${f.name}</div><div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(168,85,247,0.6)">${(f.size/1024).toFixed(1)}KB · INDEXED</div></div><span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#00ff88">✓</span>`;
+  list.appendChild(item);
+  trainingData.unshift({id:Date.now(),content:`File: ${f.name} (${(f.size/1024).toFixed(1)}KB)`,type:'knowledge',ts:Date.now(),source:'file',filename:f.name});
+  renderTraining();updateMLCount();
+}
+function renderTraining(){
+  const log=document.getElementById('training-log');if(!log)return;
+  const search=(document.getElementById('ml-search')?.value||'').toLowerCase();
+  const filtered=trainingData.filter(t=>!search||t.content.toLowerCase().includes(search)||t.type.includes(search));
+  if(!filtered.length){log.innerHTML='<div style="text-align:center;padding:20px;color:rgba(200,230,240,0.2);font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:1px">NO TRAINING DATA YET</div>';return}
+  const tagColors={knowledge:'#a855f7',prompt:'#00d4ff',instruction:'#00ff88',research:'#ffd700',strategy:'#ff9500',workflow:'#ff4f9a'};
+  log.innerHTML=filtered.map(t=>{const c=tagColors[t.type]||'#a855f7';const d=new Date(t.ts).toLocaleDateString('en-US',{month:'short',day:'numeric'});return`<div class="training-item"><div style="flex-shrink:0"><span style="font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 5px;border:1px solid ${c}40;border-radius:1px;color:${c}">${t.type.toUpperCase()}</span>${t.source==='url'?`<br><span style="font-family:'Share Tech Mono',monospace;font-size:7px;color:rgba(0,212,255,0.4);margin-top:2px">URL</span>`:''}${t.source==='file'?`<br><span style="font-family:'Share Tech Mono',monospace;font-size:7px;color:rgba(0,255,136,0.4);margin-top:2px">FILE</span>`:''}}</div><div style="flex:1;font-size:12px;color:rgba(200,230,240,0.7);line-height:1.5">${t.content.slice(0,120)}${t.content.length>120?'...':''}</div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.2)">${d}</div><button onclick="removeTraining(${t.id})" style="background:none;border:none;color:rgba(255,79,107,0.35);cursor:pointer;font-size:11px;padding:0;line-height:1">✕</button></div></div>`}).join('');
+}
+function removeTraining(id){trainingData=trainingData.filter(t=>t.id!==id);renderTraining();updateMLCount()}
+function clearTraining(){trainingData=[];renderTraining();updateMLCount()}
+function updateMLCount(){const c=trainingData.length;document.getElementById('ml-count').textContent=c;document.getElementById('footer-ml').textContent=c>0?`${c} NODES`:'READY'}
+
+// ─── GOD MODE ─────────────────────────────────────────────────────────────────
+async function runGodMode(){
+  const prob=document.getElementById('biz-input').value.trim();if(!prob)return;
+  document.getElementById('gm-btn').disabled=true;document.getElementById('gm-loading').style.display='block';document.getElementById('gm-result').innerHTML='';
+  const sys=`You are JARVIS Business God Mode with MIND LAB intelligence. Return ONLY valid JSON: {"elon":"3-4 sentences","bezos":"3-4 sentences","jobs":"3-4 sentences","buffett":"3-4 sentences","action_plan":["Week 1: action","Week 2: action","Week 3: action","Week 4: action"]}`;
+  try{const raw=await callClaude([{role:'user',content:'Business problem: '+prob}],sys);const clean=raw.replace(/```json|```/g,'').trim();const data=JSON.parse(clean);document.getElementById('gm-loading').style.display='none';renderGodModeResult(data)}
+  catch{document.getElementById('gm-loading').style.display='none';document.getElementById('gm-result').innerHTML='<div class="panel" style="padding:14px;border-left:3px solid #ff4f6b;color:#ff4f6b;font-family:\'Share Tech Mono\',monospace;font-size:11px">Analysis failed. Check API configuration.</div>'}
+  document.getElementById('gm-btn').disabled=false;
+}
+function renderGodModeResult(data){
+  const el=document.getElementById('gm-result');el.style.cssText='display:flex;flex-direction:column;gap:12px;animation:fadeUp 0.4s ease';
+  const cards=THINKING_STYLES.map(s=>`<div class="panel gm-card" style="border-left-color:${s.color};background:${s.color}04"><div style="display:flex;align-items:center;gap:9px;margin-bottom:9px"><div style="font-family:'Orbitron',monospace;font-size:12px;color:${s.color};font-weight:700">${s.name.toUpperCase()} THINKING</div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(200,230,240,0.28)">— ${s.style}</div></div><p style="font-size:13px;line-height:1.7;color:rgba(200,230,240,0.82)">${data[s.key]||'—'}</p></div>`).join('');
+  const plan=data.action_plan?`<div class="panel" style="padding:18px;border-left:3px solid #00ff88"><div style="font-family:'Orbitron',monospace;font-size:12px;color:#00ff88;font-weight:700;margin-bottom:12px">◆ 4-WEEK EXECUTION PLAN</div><div style="display:flex;flex-direction:column;gap:9px">${data.action_plan.map((item,i)=>`<div style="display:flex;gap:10px;align-items:flex-start"><div style="font-family:'Orbitron',monospace;font-size:10px;color:#00ff88;width:18px;flex-shrink:0;padding-top:1px">W${i+1}</div><div style="font-size:12px;color:rgba(200,230,240,0.82);line-height:1.55">${item.replace(/^Week \d+:\s*/i,'')}</div></div>`).join('')}</div></div>`:'';
+  el.innerHTML=cards+plan;
+}
+function resetGodMode(){document.getElementById('biz-input').value='';document.getElementById('gm-result').innerHTML='';document.getElementById('gm-loading').style.display='none';document.getElementById('gm-btn').disabled=false}
+
+// ─── MEMORY ───────────────────────────────────────────────────────────────────
+function addMemory(){const inp=document.getElementById('mem-new');const txt=inp.value.trim();if(!txt)return;memories.unshift({id:Date.now(),text:txt,tag:'note',ts:Date.now()});inp.value='';updateStats();renderMemory()}
+function deleteMemory(id){memories=memories.filter(m=>m.id!==id);updateStats();renderMemory()}
+function renderMemory(){
+  const search=document.getElementById('mem-search').value.toLowerCase();
+  const tags=['all','project','task','note','vision','conversation','research'];
+  document.getElementById('mem-tag-btns').innerHTML=tags.map(t=>`<button class="btn btn-sm" style="opacity:${memFilter===t||(t==='all'&&!memFilter)?1:0.4};font-size:9px" onclick="setMemFilter('${t}')">${t.slice(0,5).toUpperCase()}</button>`).join('');
+  const filtered=memories.filter(m=>{const mS=!search||m.text.toLowerCase().includes(search)||m.tag.includes(search);const mF=!memFilter||m.tag===memFilter;return mS&&mF});
+  document.getElementById('mem-count').textContent=`MEMORY ENGINE — ${filtered.length} NODES`;
+  const list=document.getElementById('mem-list');
+  if(!filtered.length){list.innerHTML='<div style="text-align:center;padding:32px;color:rgba(200,230,240,0.2);font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:1px">NO MEMORY NODES</div>';return}
+  const tagColors={project:'#00d4ff',task:'#00ff88',vision:'#ffd700',note:'#a855f7',conversation:'#ff4f9a',research:'#00bfff'};
+  list.innerHTML=filtered.map(m=>{const c=tagColors[m.tag]||'#a855f7';const d=new Date(m.ts).toLocaleDateString('en-US',{month:'short',day:'numeric'});return`<div class="panel mem-node"><div class="mem-tag" style="color:${c};border-color:${c}40">${m.tag.slice(0,5).toUpperCase()}</div><div style="flex:1;font-size:12px;color:rgba(200,230,240,0.75);line-height:1.5">${m.text}</div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,230,240,0.22)">${d}</div><button onclick="deleteMemory(${m.id})" style="background:none;border:none;color:rgba(255,79,107,0.35);cursor:pointer;font-size:11px;padding:0">✕</button></div></div>`}).join('');
+}
+function setMemFilter(tag){memFilter=tag==='all'?'':tag;renderMemory()}
+
+// ─── STATS ────────────────────────────────────────────────────────────────────
+function updateStats(){
+  document.getElementById('stat-mems').textContent=memories.length;
+  document.getElementById('stat-projs').textContent=PROJECTS.length;
+  document.getElementById('stat-threats').textContent=threats;
+  document.getElementById('hdr-mem').textContent=memories.length+' nodes';
+}
+
+// ─── 3D EARTH (Three.js) ─────────────────────────────────────────────────────
+function initEarth(){
+  earthInit=true;
+  const canvas=document.getElementById('earth-canvas');
+  const W=canvas.parentElement.clientWidth,H=canvas.parentElement.clientHeight;
+  canvas.width=W;canvas.height=H;
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(45,W/H,0.1,1000);
+  camera.position.z=2.8;
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setSize(W,H);renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setClearColor(0x000000,0);
+
+  // Stars
+  const starGeo=new THREE.BufferGeometry();const starVerts=[];
+  for(let i=0;i<6000;i++){starVerts.push((Math.random()-0.5)*200,(Math.random()-0.5)*200,(Math.random()-0.5)*200)}
+  starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starVerts,3));
+  const stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:0.12,transparent:true,opacity:0.7}));
+  scene.add(stars);
+
+  // Earth sphere
+  const earthGeo=new THREE.SphereGeometry(1,64,64);
+  const earthMat=new THREE.MeshPhongMaterial({color:0x1a3a5c,emissive:0x0a1a2e,emissiveIntensity:0.3,shininess:80,transparent:true,opacity:0.95});
+  const earth=new THREE.Mesh(earthGeo,earthMat);scene.add(earth);
+
+  // Grid overlay on earth
+  const wireGeo=new THREE.SphereGeometry(1.001,32,32);
+  const wireMat=new THREE.MeshBasicMaterial({color:0x00d4ff,wireframe:true,transparent:true,opacity:0.06});
+  const wireframe=new THREE.Mesh(wireGeo,wireMat);scene.add(wireframe);
+
+  // Atmosphere glow
+  const atmGeo=new THREE.SphereGeometry(1.08,64,64);
+  const atmMat=new THREE.MeshPhongMaterial({color:0x00aaff,transparent:true,opacity:0.08,side:THREE.BackSide});
+  scene.add(new THREE.Mesh(atmGeo,atmMat));
+
+  // Outer atmosphere
+  const atm2Geo=new THREE.SphereGeometry(1.18,32,32);
+  const atm2Mat=new THREE.MeshBasicMaterial({color:0x0044ff,transparent:true,opacity:0.03,side:THREE.BackSide});
+  scene.add(new THREE.Mesh(atm2Geo,atm2Mat));
+
+  // Orbit ring
+  const ringGeo=new THREE.RingGeometry(1.35,1.36,128);
+  const ringMat=new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:0.3,side:THREE.DoubleSide});
+  const ring=new THREE.Mesh(ringGeo,ringMat);ring.rotation.x=Math.PI/2.5;scene.add(ring);
+
+  // AI nodes on surface (glowing dots)
+  const nodePositions=[
+    [0,0.8,0.6],[0.6,0.6,0.5],[-0.6,0.5,0.7],[0.8,-0.3,0.5],[-0.7,-0.2,0.7],
+    [0.3,0.9,-0.3],[0.5,-0.7,0.5],[-0.3,0.7,-0.6],[0.7,0.4,-0.6],[-0.8,0.3,0.5]
+  ];
+  nodePositions.forEach((pos,i)=>{
+    const nGeo=new THREE.SphereGeometry(0.012,8,8);
+    const colors=[0x00d4ff,0x00ff88,0xffd700,0xff4f9a,0xa855f7];
+    const nMat=new THREE.MeshBasicMaterial({color:colors[i%colors.length]});
+    const node=new THREE.Mesh(nGeo,nMat);
+    const v=new THREE.Vector3(...pos).normalize();node.position.copy(v);scene.add(node);
+  });
+
+  // Lights
+  scene.add(new THREE.AmbientLight(0x223344,0.8));
+  const sun=new THREE.DirectionalLight(0x4488ff,1.5);sun.position.set(5,3,5);scene.add(sun);
+  const fill=new THREE.DirectionalLight(0x001133,0.5);fill.position.set(-5,-3,-5);scene.add(fill);
+
+  // Mouse drag
+  let isDragging=false,prevMouse={x:0,y:0},rotVel={x:0,y:0};
+  canvas.addEventListener('mousedown',e=>{isDragging=true;prevMouse={x:e.clientX,y:e.clientY}});
+  canvas.addEventListener('mousemove',e=>{if(!isDragging)return;const dx=e.clientX-prevMouse.x,dy=e.clientY-prevMouse.y;rotVel.x=dy*0.005;rotVel.y=dx*0.005;prevMouse={x:e.clientX,y:e.clientY}});
+  canvas.addEventListener('mouseup',()=>isDragging=false);
+  canvas.addEventListener('touchstart',e=>{prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY}});
+  canvas.addEventListener('touchmove',e=>{const dx=e.touches[0].clientX-prevMouse.x,dy=e.touches[0].clientY-prevMouse.y;rotVel.x=dy*0.005;rotVel.y=dx*0.005;prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY}});
+  canvas.addEventListener('wheel',e=>{camera.position.z=Math.max(1.5,Math.min(5,camera.position.z+e.deltaY*0.002))});
+
+  // Animate
+  function animEarth(){
+    requestAnimationFrame(animEarth);
+    if(!isDragging){rotVel.x*=0.95;rotVel.y*=0.95;earth.rotation.y+=0.0015;wireframe.rotation.y+=0.0015}
+    earth.rotation.x+=rotVel.x;earth.rotation.y+=rotVel.y;
+    wireframe.rotation.x+=rotVel.x;wireframe.rotation.y+=rotVel.y;
+    ring.rotation.z+=0.001;stars.rotation.y+=0.00005;
+    renderer.render(scene,camera);
+  }
+  animEarth();
+
+  // Resize handler
+  window.addEventListener('resize',()=>{const W2=canvas.parentElement.clientWidth,H2=canvas.parentElement.clientHeight;camera.aspect=W2/H2;camera.updateProjectionMatrix();renderer.setSize(W2,H2)});
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderMemory();updateStats();renderTraining();
+setTimeout(()=>{renderResearchAgents();renderSecurityAgents()},100);
+</script>
+</body>
+</html>
